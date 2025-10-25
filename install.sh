@@ -165,21 +165,24 @@ install_nodemix() {
     fi
     
     mkdir -p "$INSTALL_DIR"
-    cd "$INSTALL_DIR"
     
-    # 如果是从仓库克隆
-    if [ -d ".git" ]; then
-        print_info "检测到 git 仓库，拉取最新代码..."
-        git pull
+    # 下载项目文件
+    print_info "从 GitHub 下载项目文件..."
+    cd /tmp
+    rm -rf V2bX-Nodemix-main V2bX-Nodemix.zip 2>/dev/null
+    
+    if wget -q --show-progress "https://github.com/Cd1s/V2bX-Nodemix/archive/refs/heads/main.zip" -O V2bX-Nodemix.zip; then
+        unzip -q -o V2bX-Nodemix.zip
+        cp -r V2bX-Nodemix-main/* "$INSTALL_DIR/"
+        rm -rf V2bX-Nodemix-main V2bX-Nodemix.zip
+        print_success "项目文件下载完成"
     else
-        # 复制当前脚本所在目录的文件
-        SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-        
-        if [ "$SCRIPT_DIR" != "$INSTALL_DIR" ]; then
-            print_info "复制文件到 $INSTALL_DIR..."
-            cp -r "$SCRIPT_DIR"/* "$INSTALL_DIR/" 2>/dev/null || true
-        fi
+        print_error "无法从 GitHub 下载项目文件"
+        print_info "请检查网络连接或手动克隆: git clone https://github.com/Cd1s/V2bX-Nodemix.git $INSTALL_DIR"
+        exit 1
     fi
+    
+    cd "$INSTALL_DIR"
     
     # 创建必要的目录
     mkdir -p "$INSTALL_DIR/configs/template"
@@ -187,12 +190,13 @@ install_nodemix() {
     mkdir -p "$INSTALL_DIR/logs"
     
     # 设置权限
-    chmod +x "$INSTALL_DIR/v2bx-manager.sh"
-    chmod +x "$INSTALL_DIR/web/start-web.sh"
+    chmod +x "$INSTALL_DIR/v2bx-manager.sh" 2>/dev/null || true
+    chmod +x "$INSTALL_DIR/web/start-web.sh" 2>/dev/null || true
+    chmod +x "$INSTALL_DIR/update.sh" 2>/dev/null || true
     
     # 更新管理脚本中的 V2bX 路径
     if [ -n "$V2BX_BIN" ]; then
-        sed -i "s|V2BX_BIN=.*|V2BX_BIN=\"$V2BX_BIN\"|" "$INSTALL_DIR/v2bx-manager.sh"
+        sed -i "s|V2BX_BIN=.*|V2BX_BIN=\"$V2BX_BIN\"|" "$INSTALL_DIR/v2bx-manager.sh" 2>/dev/null || true
     fi
     
     print_success "V2bX-Nodemix 安装完成"
