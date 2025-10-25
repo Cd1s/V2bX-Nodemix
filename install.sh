@@ -56,17 +56,35 @@ install_dependencies() {
     
     if [[ "$OS" == "ubuntu" ]] || [[ "$OS" == "debian" ]]; then
         apt update
-        apt install -y python3 python3-pip wget curl unzip
+        apt install -y python3 python3-pip python3-venv wget curl unzip
     elif [[ "$OS" == "centos" ]] || [[ "$OS" == "rhel" ]]; then
         yum install -y python3 python3-pip wget curl unzip
     else
         print_warning "未知系统，尝试使用通用包管理器"
     fi
     
-    # 安装 Flask
-    pip3 install flask -q
+    # 安装 Flask (优先使用虚拟环境，否则使用系统包)
+    print_info "安装 Flask..."
     
-    print_success "依赖安装完成"
+    # 方法1: 尝试从系统包管理器安装
+    if [[ "$OS" == "ubuntu" ]] || [[ "$OS" == "debian" ]]; then
+        if apt install -y python3-flask 2>/dev/null; then
+            print_success "Flask 已从系统包安装"
+            return 0
+        fi
+    fi
+    
+    # 方法2: 尝试使用 pip (可能需要 --break-system-packages)
+    if pip3 install flask -q 2>/dev/null; then
+        print_success "Flask 安装完成"
+    else
+        print_info "使用系统包管理器模式安装 Flask..."
+        pip3 install flask --break-system-packages -q 2>/dev/null || {
+            print_error "无法安装 Flask，请手动安装: apt install python3-flask"
+            exit 1
+        }
+        print_success "Flask 安装完成"
+    fi
 }
 
 # 检测 V2bX 安装
@@ -260,6 +278,9 @@ EOF
 create_systemd_service() {
     print_info "创建 Web 管理界面系统服务..."
     
+    # 检测 Python 路径
+    PYTHON_BIN=$(which python3)
+    
     cat > /etc/systemd/system/v2bx-nodemix-web.service <<EOF
 [Unit]
 Description=V2bX-Nodemix Web Management
@@ -269,9 +290,10 @@ After=network.target
 Type=simple
 User=root
 WorkingDirectory=$INSTALL_DIR/web
-ExecStart=/usr/bin/python3 $INSTALL_DIR/web/app.py
+ExecStart=$PYTHON_BIN $INSTALL_DIR/web/app.py
 Restart=on-failure
 RestartSec=5s
+Environment="PYTHONUNBUFFERED=1"
 
 [Install]
 WantedBy=multi-user.target
