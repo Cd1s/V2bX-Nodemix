@@ -253,6 +253,48 @@ def api_logs(name):
     except Exception as e:
         return jsonify({'logs': f'读取日志失败: {str(e)}'})
 
+@app.route('/logs/<name>')
+@login_required
+def view_logs(name):
+    """查看实例日志页面"""
+    log_file = INSTANCES_DIR / name / 'logs' / 'output.log'
+    
+    if not log_file.exists():
+        logs = '日志文件不存在'
+    else:
+        try:
+            result = subprocess.run(['tail', '-n', '200', str(log_file)],
+                                  capture_output=True, text=True)
+            logs = result.stdout
+        except Exception as e:
+            logs = f'读取日志失败: {str(e)}'
+    
+    return render_template('logs.html', name=name, logs=logs, status=get_instance_status(name))
+
+@app.route('/api/delete/<name>', methods=['POST'])
+@login_required
+def api_delete(name):
+    """删除实例"""
+    try:
+        # 先停止实例
+        run_manager_command('stop', name)
+        
+        # 删除配置目录
+        config_dir = CONFIGS_DIR / name
+        if config_dir.exists():
+            import shutil
+            shutil.rmtree(config_dir)
+        
+        # 删除运行时目录
+        instance_dir = INSTANCES_DIR / name
+        if instance_dir.exists():
+            import shutil
+            shutil.rmtree(instance_dir)
+        
+        return jsonify({'success': True, 'message': f'实例 {name} 已删除'})
+    except Exception as e:
+        return jsonify({'success': False, 'message': f'删除失败: {str(e)}'})
+
 @app.route('/settings', methods=['GET', 'POST'])
 @login_required
 def settings():
@@ -346,10 +388,16 @@ def create_instance():
             
             # 创建 sing_origin.json
             use_wireguard = request.form.get('use_wireguard') == 'on'
+            wg_tag = request.form.get('wg_tag', 'wg-out')
             
             outbounds = [
                 {"type": "direct", "tag": "direct"},
                 {"type": "block", "tag": "block"}
+            ]
+            
+            route_rules = [
+                {"ip_is_private": True, "outbound": "block"},
+                {"ip_cidr": ["198.18.0.0/16"], "outbound": "direct"}
             ]
             
             if use_wireguard:
@@ -361,7 +409,7 @@ def create_instance():
                 
                 outbounds.insert(0, {
                     "type": "wireguard",
-                    "tag": "wg-out",
+                    "tag": wg_tag,
                     "server": wg_server,
                     "server_port": int(wg_port),
                     "system_interface": False,
@@ -370,6 +418,12 @@ def create_instance():
                     "local_address": [wg_local_ip],
                     "mtu": 1280,
                     "workers": 4
+                })
+                
+                # 添加默认路由规则：所有 UDP/TCP 走 WireGuard
+                route_rules.append({
+                    "network": ["udp", "tcp"],
+                    "outbound": wg_tag
                 })
             
             sing_config = {
@@ -383,10 +437,7 @@ def create_instance():
                 },
                 "outbounds": outbounds,
                 "route": {
-                    "rules": [
-                        {"ip_is_private": True, "outbound": "block"},
-                        {"ip_cidr": ["198.18.0.0/16"], "outbound": "direct"}
-                    ]
+                    "rules": route_rules
                 },
                 "experimental": {"cache_file": {"enabled": True}}
             }

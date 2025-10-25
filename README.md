@@ -69,18 +69,25 @@ vi /opt/V2bX-Nodemix/configs/example/sing_origin.json
 # 2. 生成 WireGuard 密钥（如需要）
 V2bX x25519
 
-# 3. 查看实例状态
-v2bx-nodemix status
+# 3. 进入管理控制台
+v2bx-nodemix
 
-# 4. 启动实例
-v2bx-nodemix start example
-
-# 5. 启动 Web 管理界面
-systemctl start v2bx-nodemix-web
-
-# 6. 访问 Web 界面
-http://你的服务器IP:5000
+# 或使用命令行
+v2bx-nodemix start example   # 启动实例
+v2bx-nodemix status          # 查看状态
+v2bx-nodemix logs example    # 查看日志
 ```
+
+> **🎮 管理控制台功能**:
+> - 📊 查看所有实例状态
+> - ▶️ 启动/停止/重启实例
+> - 📋 查看实时日志
+> - 📁 快速访问配置目录
+> - 🗑️ 删除实例
+> - 🔐 修改 Web 管理密码
+> - 🌐 Web 服务管理
+> - 🔄 一键升级系统
+> - 🗑️ 完全卸载
 
 > **📖 配置说明**:
 > - 面板配置: 编辑 `config.json` 中的 ApiHost、ApiKey、NodeID
@@ -544,7 +551,42 @@ git pull
 systemctl restart v2bx-nodemix-web
 ```
 
-## 📄 许可证
+## �️ 卸载
+
+### 方法一：使用卸载脚本（推荐）
+
+```bash
+# 下载并运行卸载脚本
+wget -O uninstall.sh https://raw.githubusercontent.com/Cd1s/V2bX-Nodemix/main/uninstall.sh
+chmod +x uninstall.sh
+sudo ./uninstall.sh
+```
+
+### 方法二：手动卸载
+
+```bash
+# 停止所有实例
+v2bx-nodemix stop-all
+
+# 停止并禁用 Web 服务
+systemctl stop v2bx-nodemix-web
+systemctl disable v2bx-nodemix-web
+rm -f /etc/systemd/system/v2bx-nodemix-web.service
+systemctl daemon-reload
+
+# 删除命令行工具
+rm -f /usr/local/bin/v2bx-nodemix
+
+# 删除安装目录
+rm -rf /opt/V2bX-Nodemix
+```
+
+**注意**: 卸载 V2bX-Nodemix 不会删除 V2bX 主程序。如需删除 V2bX：
+```bash
+rm -rf /usr/local/V2bX
+```
+
+## �📄 许可证
 
 MIT License
 

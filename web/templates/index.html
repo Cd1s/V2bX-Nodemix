@@ -92,11 +92,12 @@
                 <div class="actions">
                     {% if inst.status == 'running' %}
                     <button class="btn btn-stop" onclick="controlInstance('{{ inst.name }}', 'stop')">停止</button>
-                    <button class="btn btn-logs" onclick="showLogs('{{ inst.name }}')">日志</button>
                     {% else %}
                     <button class="btn btn-start" onclick="controlInstance('{{ inst.name }}', 'start')">启动</button>
                     {% endif %}
+                    <a href="/logs/{{ inst.name }}" class="btn btn-logs">查看日志</a>
                     <a href="/edit/{{ inst.name }}" class="btn btn-edit">编辑配置</a>
+                    <button class="btn" style="background: #dc3545; color: white;" onclick="deleteInstance('{{ inst.name }}')">🗑️ 删除</button>
                 </div>
             </div>
             {% endfor %}
@@ -118,16 +119,29 @@
             .then(r => r.json())
             .then(data => {
                 if (data.success) {
-                    alert(`${action} 成功!`);
+                    alert(`操作成功!`);
                     location.reload();
                 } else {
-                    alert(`${action} 失败: ${data.error}`);
+                    alert(`操作失败: ${data.error || data.message}`);
                 }
-            });
+            })
+            .catch(e => alert(`请求失败: ${e}`));
     }
     
-    function showLogs(name) {
-        window.open(`/instance/${name}#logs`, '_blank');
+    function deleteInstance(name) {
+        if (!confirm(`确定要删除实例 ${name} 吗?\n\n此操作将删除所有配置文件和运行数据，无法恢复!`)) return;
+        
+        fetch(`/api/delete/${name}`, { method: 'POST' })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    alert(`实例 ${name} 已删除`);
+                    location.reload();
+                } else {
+                    alert(`删除失败: ${data.message}`);
+                }
+            })
+            .catch(e => alert(`请求失败: ${e}`));
     }
     
     // 自动刷新状态

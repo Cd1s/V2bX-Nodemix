@@ -290,10 +290,12 @@ EOF
 create_command_alias() {
     print_info "创建命令行快捷方式..."
     
-    # 创建符号链接
-    ln -sf "$INSTALL_DIR/v2bx-manager.sh" /usr/local/bin/v2bx-nodemix
+    # 创建符号链接到交互式管理脚本
+    ln -sf "$INSTALL_DIR/v2bx-nodemix.sh" /usr/local/bin/v2bx-nodemix
+    chmod +x "$INSTALL_DIR/v2bx-nodemix.sh"
+    chmod +x "$INSTALL_DIR/v2bx-manager.sh"
     
-    print_success "现在可以使用 'v2bx-nodemix' 命令管理实例"
+    print_success "现在可以使用 'v2bx-nodemix' 命令进入管理控制台"
 }
 
 # 显示安装总结
@@ -309,9 +311,9 @@ show_summary() {
     echo "📋 示例配置: $INSTALL_DIR/configs/example"
     echo ""
     echo "🎮 管理命令:"
+    echo "  v2bx-nodemix                     # 进入交互式管理控制台 ⭐"
     echo "  v2bx-nodemix status              # 查看实例状态"
-    echo "  v2bx-nodemix start example       # 启动示例实例"
-    echo "  v2bx-nodemix logs example        # 查看实例日志"
+    echo "  v2bx-nodemix start <实例>        # 启动实例"
     echo ""
     echo "🌐 Web 管理界面:"
     echo "  访问: http://$(hostname -I | awk '{print $1}'):5000"
