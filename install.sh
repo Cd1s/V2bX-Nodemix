@@ -198,6 +198,17 @@ install_nodemix() {
     if [ -n "$V2BX_BIN" ]; then
         sed -i "s|V2BX_BIN=.*|V2BX_BIN=\"$V2BX_BIN\"|" "$INSTALL_DIR/v2bx-manager.sh" 2>/dev/null || true
     fi
+
+    # 如果系统中已经存在 V2bX 二进制，创建 bin 目录并建立符号链接，
+    # 以便旧的管理逻辑可以在 $INSTALL_DIR/bin/V2bX 找到可执行文件
+    if [ -n "$V2BX_BIN" ]; then
+        mkdir -p "$INSTALL_DIR/bin"
+        if [ -f "$V2BX_BIN" ]; then
+            ln -sf "$V2BX_BIN" "$INSTALL_DIR/bin/V2bX" 2>/dev/null || cp -a "$V2BX_BIN" "$INSTALL_DIR/bin/V2bX" 2>/dev/null || true
+            chmod +x "$INSTALL_DIR/bin/V2bX" 2>/dev/null || true
+            print_info "已为 V2bX 创建符号链接: $INSTALL_DIR/bin/V2bX -> $V2BX_BIN"
+        fi
+    fi
     
     print_success "V2bX-Nodemix 安装完成"
 }

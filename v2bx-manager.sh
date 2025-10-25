@@ -13,7 +13,32 @@ NC='\033[0m'
 BASE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CONFIGS_DIR="${BASE_DIR}/configs"
 INSTANCES_DIR="${BASE_DIR}/instances"
-BINARY_PATH="${BASE_DIR}/bin/V2bX"
+
+# 自动检测 V2bX 二进制文件位置
+detect_v2bx_binary() {
+    local paths=(
+        "${BASE_DIR}/bin/V2bX"
+        "/usr/local/V2bX/V2bX"
+        "/opt/V2bX/V2bX"
+        "/usr/bin/V2bX"
+        "$(which V2bX 2>/dev/null)"
+    )
+    
+    for path in "${paths[@]}"; do
+        if [[ -f "$path" ]] && [[ -x "$path" ]]; then
+            echo "$path"
+            return 0
+        fi
+    done
+    
+    return 1
+}
+
+BINARY_PATH=$(detect_v2bx_binary)
+if [[ -z "$BINARY_PATH" ]]; then
+    log_error "未找到 V2bX 二进制文件，请先安装 V2bX"
+    exit 1
+fi
 
 log_info() { echo -e "${GREEN}[INFO]${NC} $1"; }
 log_error() { echo -e "${RED}[ERROR]${NC} $1"; }
@@ -38,17 +63,45 @@ is_running() {
 start_instance() {
     local name=$1
     
+    # 检查配置是否存在
+    if [[ ! -d "$CONFIGS_DIR/$name" ]]; then
+        log_error "实例配置不存在: $CONFIGS_DIR/$name"
+        return 1
+    fi
+    
+    if [[ ! -f "$CONFIGS_DIR/$name/config.json" ]]; then
+        log_error "配置文件不存在: $CONFIGS_DIR/$name/config.json"
+        return 1
+    fi
+    
     if is_running "$name"; then
         log_info "实例 $name 已在运行"
         return 0
     fi
     
+    # 检查 V2bX 二进制
+    if [[ ! -f "$BINARY_PATH" ]]; then
+        log_error "V2bX 二进制文件不存在: $BINARY_PATH"
+        return 1
+    fi
+    
     local instance_dir="$INSTANCES_DIR/$name"
     mkdir -p "$instance_dir/logs"
     
-    [[ ! -f "$instance_dir/V2bX" ]] && cp "$BINARY_PATH" "$instance_dir/V2bX" && chmod +x "$instance_dir/V2bX"
+    # 创建或更新实例目录中的 V2bX 副本/链接
+    if [[ ! -f "$instance_dir/V2bX" ]]; then
+        log_info "复制 V2bX 到实例目录..."
+        cp "$BINARY_PATH" "$instance_dir/V2bX" && chmod +x "$instance_dir/V2bX"
+        if [[ $? -ne 0 ]]; then
+            log_error "无法复制 V2bX 二进制文件"
+            return 1
+        fi
+    fi
     
     log_info "启动实例: $name"
+    log_info "使用配置: $CONFIGS_DIR/$name/config.json"
+    log_info "使用二进制: $BINARY_PATH"
+    
     cd "$instance_dir"
     nohup ./V2bX -c "$CONFIGS_DIR/$name/config.json" > logs/output.log 2>&1 &
     echo $! > pid
@@ -58,6 +111,7 @@ start_instance() {
         log_success "实例 $name 启动成功 (PID: $(get_pid $name))"
     else
         log_error "实例 $name 启动失败,查看日志: tail $instance_dir/logs/output.log"
+        return 1
     fi
 }
 
