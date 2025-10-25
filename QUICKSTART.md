@@ -3,10 +3,12 @@
 ## 🚀 一键安装
 
 ```bash
-wget -O install.sh https://raw.githubusercontent.com/你的用户名/V2bX-Nodemix/main/install.sh
+wget -O install.sh https://raw.githubusercontent.com/Cd1s/V2bX-Nodemix/main/install.sh
 chmod +x install.sh
 sudo ./install.sh
 ```
+
+> **Debian 12/Ubuntu 24.04+ 用户注意**: 安装脚本会自动处理 Python 外部管理环境，优先使用系统包 `python3-flask`。
 
 ## 📝 安装后操作
 
