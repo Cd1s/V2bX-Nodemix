@@ -62,15 +62,30 @@ sudo ./install.sh
 
 安装完成后：
 ```bash
-# 查看实例状态
+# 1. 编辑配置文件
+vi /opt/V2bX-Nodemix/configs/example/config.json
+vi /opt/V2bX-Nodemix/configs/example/sing_origin.json
+
+# 2. 生成 WireGuard 密钥（如需要）
+V2bX x25519
+
+# 3. 查看实例状态
 v2bx-nodemix status
 
-# 启动 Web 管理界面
+# 4. 启动实例
+v2bx-nodemix start example
+
+# 5. 启动 Web 管理界面
 systemctl start v2bx-nodemix-web
 
-# 访问 Web 界面
+# 6. 访问 Web 界面
 http://你的服务器IP:5000
 ```
+
+> **📖 配置说明**:
+> - 面板配置: 编辑 `config.json` 中的 ApiHost、ApiKey、NodeID
+> - WireGuard 配置: 参考 [WIREGUARD.md](WIREGUARD.md) 生成密钥和配置
+> - 如不需要 WireGuard，可删除 `sing_origin.json` 中的 wireguard outbound
 
 > **注意**: Debian 12/Ubuntu 24.04+ 使用外部管理的 Python 环境，安装脚本会自动使用系统包 `python3-flask` 或添加 `--break-system-packages` 参数。
 

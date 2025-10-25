@@ -49,8 +49,8 @@
       "server": "wg.example.com",
       "server_port": 51820,
       "system_interface": false,
-      "private_key": "your-wireguard-private-key",
-      "peer_public_key": "server-public-key",
+      "private_key": "REPLACE_WITH_YOUR_WG_PRIVATE_KEY",
+      "peer_public_key": "REPLACE_WITH_SERVER_PUBLIC_KEY",
       "local_address": [
         "10.0.1.2/16"
       ],

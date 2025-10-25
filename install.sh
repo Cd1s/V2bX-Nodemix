@@ -318,32 +318,24 @@ show_summary() {
     echo "  systemctl enable v2bx-nodemix-web   # 开机自启"
     echo "  访问: http://$(hostname -I | awk '{print $1}'):5000"
     echo ""
-    echo "📚 下一步:"
-    echo "  1. 编辑配置: $INSTALL_DIR/configs/example/"
-    echo "  2. 启动实例: v2bx-nodemix start example"
-    echo "  3. 启动 Web: systemctl start v2bx-nodemix-web"
+    echo "⚙️  配置步骤:"
+    echo "  1. 编辑面板配置: vi $INSTALL_DIR/configs/example/config.json"
+    echo "     - 修改 ApiHost、ApiKey、NodeID"
+    echo ""
+    echo "  2. 配置 WireGuard (可选):"
+    echo "     - 生成密钥: V2bX x25519"
+    echo "     - 编辑配置: vi $INSTALL_DIR/configs/example/sing_origin.json"
+    echo "     - 详细说明: cat $INSTALL_DIR/WIREGUARD.md"
+    echo ""
+    echo "  3. 启动实例: v2bx-nodemix start example"
+    echo ""
+    echo "  4. 启动 Web 管理界面: systemctl start v2bx-nodemix-web"
+    echo ""
+    print_warning "重要: 必须先编辑配置文件,替换 ApiHost/ApiKey 和 WireGuard 密钥!"
     echo ""
     print_info "详细文档: $INSTALL_DIR/README.md"
+    print_info "WireGuard 配置: $INSTALL_DIR/WIREGUARD.md"
     echo "=========================================="
-}
-
-# 询问是否启动服务
-ask_start_services() {
-    echo ""
-    read -p "是否现在启动 Web 管理界面？(y/n): " START_WEB
-    
-    if [[ "$START_WEB" == "y" ]]; then
-        systemctl start v2bx-nodemix-web
-        print_success "Web 管理界面已启动"
-        print_info "访问: http://$(hostname -I | awk '{print $1}'):5000"
-    fi
-    
-    echo ""
-    read -p "是否现在启动示例实例？(y/n): " START_EXAMPLE
-    
-    if [[ "$START_EXAMPLE" == "y" ]]; then
-        "$INSTALL_DIR/v2bx-manager.sh" start example
-    fi
 }
 
 # 主安装流程
@@ -364,10 +356,9 @@ main() {
     create_systemd_service
     create_command_alias
     show_summary
-    ask_start_services
     
     echo ""
-    print_success "安装完成！"
+    print_success "安装完成！请按照上述步骤编辑配置文件后启动实例"
 }
 
 # 运行主函数

@@ -10,7 +10,8 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m'
 
-BASE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# 固定使用安装目录，避免符号链接导致的路径问题
+BASE_DIR="/opt/V2bX-Nodemix"
 CONFIGS_DIR="${BASE_DIR}/configs"
 INSTANCES_DIR="${BASE_DIR}/instances"
 
