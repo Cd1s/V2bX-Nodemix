@@ -124,11 +124,11 @@ cd ..
 
 ```bash
 # 克隆仓库
-git clone https://github.com/你的用户名/V2bX-Nodemix.git
+git clone https://github.com/Cd1s/V2bX-Nodemix.git
 cd V2bX-Nodemix
 
 # 或者下载 zip
-wget https://github.com/你的用户名/V2bX-Nodemix/archive/main.zip
+wget https://github.com/Cd1s/V2bX-Nodemix/archive/main.zip
 unzip main.zip
 cd V2bX-Nodemix-main
 ```
