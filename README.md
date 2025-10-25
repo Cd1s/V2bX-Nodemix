@@ -58,6 +58,7 @@ sudo ./install.sh
 - ✅ 创建示例配置
 - ✅ 配置系统服务
 - ✅ 创建命令行快捷方式
+- ✅ 自动处理 Python 环境（Debian 12+ 兼容）
 
 安装完成后：
 ```bash
@@ -71,6 +72,8 @@ systemctl start v2bx-nodemix-web
 http://你的服务器IP:5000
 ```
 
+> **注意**: Debian 12/Ubuntu 24.04+ 使用外部管理的 Python 环境，安装脚本会自动使用系统包 `python3-flask` 或添加 `--break-system-packages` 参数。
+
 ### 方式二：手动安装
 
 #### 1. 安装依赖
@@ -79,6 +82,12 @@ http://你的服务器IP:5000
 # Debian/Ubuntu
 apt update
 apt install -y python3 python3-pip wget unzip
+
+# 安装 Flask
+# Debian 12/Ubuntu 24.04+
+apt install -y python3-flask
+
+# 或使用 pip (旧版本系统)
 pip3 install flask
 
 # 下载 V2bX
@@ -484,6 +493,19 @@ A: 查看日志 `./v2bx-manager.sh logs <实例名>`，检查配置文件格式�
 
 **Q: Web 界面如何设置密码？**  
 A: 使用 Nginx 反向代理配置 HTTP Basic Auth，或修改 `web/app.py` 添加认证。
+
+**Q: Debian 12 安装 Flask 报错 "externally-managed-environment"？**  
+A: 这是正常的。安装脚本会自动处理，使用以下任一方法：
+```bash
+# 方法1: 使用系统包（推荐）
+apt install python3-flask
+
+# 方法2: 使用 pip 的特殊参数
+pip3 install flask --break-system-packages
+
+# 方法3: 手动运行安装脚本，它会自动选择正确的方法
+./install.sh
+```
 
 ## 📚 相关资源
 
