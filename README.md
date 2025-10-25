@@ -45,10 +45,7 @@ V2bX-Nodemix/
 ### 方式一：一键安装（推荐）
 
 ```bash
-# 下载并运行安装脚本
-wget -O install.sh https://raw.githubusercontent.com/Cd1s/V2bX-Nodemix/main/install.sh
-chmod +x install.sh
-sudo ./install.sh
+bash <(curl -fsSL https://raw.githubusercontent.com/Cd1s/V2bX-Nodemix/main/install.sh)
 ```
 
 安装脚本会自动：
