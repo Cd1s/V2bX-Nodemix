@@ -46,7 +46,7 @@ V2bX-Nodemix/
 
 ```bash
 # 下载并运行安装脚本
-wget -O install.sh https://raw.githubusercontent.com/你的用户名/V2bX-Nodemix/main/install.sh
+wget -O install.sh https://raw.githubusercontent.com/Cd1s/V2bX-Nodemix/main/install.sh
 chmod +x install.sh
 sudo ./install.sh
 ```
