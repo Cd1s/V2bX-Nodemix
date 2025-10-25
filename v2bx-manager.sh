@@ -103,7 +103,7 @@ start_instance() {
     log_info "使用二进制: $BINARY_PATH"
     
     cd "$instance_dir"
-    nohup ./V2bX -c "$CONFIGS_DIR/$name/config.json" > logs/output.log 2>&1 &
+    nohup ./V2bX server -c "$CONFIGS_DIR/$name/config.json" > logs/output.log 2>&1 &
     echo $! > pid
     
     sleep 2
