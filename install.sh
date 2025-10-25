@@ -314,9 +314,9 @@ show_summary() {
     echo "  v2bx-nodemix logs example        # 查看实例日志"
     echo ""
     echo "🌐 Web 管理界面:"
-    echo "  systemctl start v2bx-nodemix-web    # 启动 Web 界面"
-    echo "  systemctl enable v2bx-nodemix-web   # 开机自启"
     echo "  访问: http://$(hostname -I | awk '{print $1}'):5000"
+    echo "  默认密码: admin123"
+    echo "  状态: systemctl status v2bx-nodemix-web"
     echo ""
     echo "⚙️  配置步骤:"
     echo "  1. 编辑面板配置: vi $INSTALL_DIR/configs/example/config.json"
@@ -355,10 +355,16 @@ main() {
     create_example_config
     create_systemd_service
     create_command_alias
+    
+    # 默认启动 Web 管理界面
+    print_info "启动 Web 管理界面..."
+    systemctl start v2bx-nodemix-web
+    systemctl enable v2bx-nodemix-web
+    
     show_summary
     
     echo ""
-    print_success "安装完成！请按照上述步骤编辑配置文件后启动实例"
+    print_success "安装完成！Web 管理界面已启动"
 }
 
 # 运行主函数

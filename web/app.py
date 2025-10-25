@@ -4,19 +4,58 @@ V2bX-Nodemix Web 管理界面
 提供 Web 界面来管理多个 V2bX 实例的配置
 """
 
-from flask import Flask, render_template, request, jsonify, redirect, url_for
+from flask import Flask, render_template, request, jsonify, redirect, url_for, session
+from functools import wraps
 import json
 import os
 import subprocess
 from pathlib import Path
+import hashlib
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'v2bx-nodemix-secret-key-change-this'
+app.config['SECRET_KEY'] = os.urandom(24).hex()
+
+# 默认管理密码 (SHA256): admin123
+# 可以通过环境变量 V2BX_WEB_PASSWORD 设置
+DEFAULT_PASSWORD_HASH = '240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9'  # admin123
+ADMIN_PASSWORD_HASH = os.getenv('V2BX_WEB_PASSWORD_HASH', DEFAULT_PASSWORD_HASH)
 
 BASE_DIR = Path(__file__).parent.parent
 CONFIGS_DIR = BASE_DIR / 'configs'
 INSTANCES_DIR = BASE_DIR / 'instances'
 MANAGER_SCRIPT = BASE_DIR / 'v2bx-manager.sh'
+
+def hash_password(password):
+    """SHA256 哈希密码"""
+    return hashlib.sha256(password.encode()).hexdigest()
+
+def login_required(f):
+    """登录验证装饰器"""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not session.get('logged_in'):
+            return redirect(url_for('login'))
+        return f(*args, **kwargs)
+    return decorated_function
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    """登录页面"""
+    if request.method == 'POST':
+        password = request.form.get('password', '')
+        if hash_password(password) == ADMIN_PASSWORD_HASH:
+            session['logged_in'] = True
+            return redirect(url_for('index'))
+        else:
+            return render_template('login.html', error='密码错误')
+    
+    return render_template('login.html')
+
+@app.route('/logout')
+def logout():
+    """登出"""
+    session.pop('logged_in', None)
+    return redirect(url_for('login'))
 
 def get_instances():
     """获取所有实例"""
@@ -81,12 +120,14 @@ def run_manager_command(command, instance_name=None):
         }
 
 @app.route('/')
+@login_required
 def index():
     """主页 - 显示所有实例"""
     instances = get_instances()
     return render_template('index.html', instances=instances)
 
 @app.route('/instance/<name>')
+@login_required
 def view_instance(name):
     """查看实例详情"""
     config_file = CONFIGS_DIR / name / 'config.json'
@@ -110,6 +151,7 @@ def view_instance(name):
                          status=get_instance_status(name))
 
 @app.route('/edit/<name>', methods=['GET', 'POST'])
+@login_required
 def edit_instance(name):
     """编辑实例配置"""
     sing_file = CONFIGS_DIR / name / 'sing_origin.json'
@@ -153,24 +195,28 @@ def edit_instance(name):
                          sing_config=sing_config)
 
 @app.route('/api/start/<name>', methods=['POST'])
+@login_required
 def api_start(name):
     """启动实例"""
     result = run_manager_command('start', name)
     return jsonify(result)
 
 @app.route('/api/stop/<name>', methods=['POST'])
+@login_required
 def api_stop(name):
     """停止实例"""
     result = run_manager_command('stop', name)
     return jsonify(result)
 
 @app.route('/api/restart/<name>', methods=['POST'])
+@login_required
 def api_restart(name):
     """重启实例"""
     result = run_manager_command('restart', name)
     return jsonify(result)
 
 @app.route('/api/status')
+@login_required
 def api_status():
     """获取所有实例状态"""
     instances = get_instances()
@@ -185,6 +231,7 @@ def api_status():
     })
 
 @app.route('/api/logs/<name>')
+@login_required
 def api_logs(name):
     """获取实例日志"""
     log_file = INSTANCES_DIR / name / 'logs' / 'output.log'
@@ -206,6 +253,14 @@ if __name__ == '__main__':
     INSTANCES_DIR.mkdir(exist_ok=True)
     
     # 启动 Web 服务器
+    print("=" * 50)
     print("V2bX-Nodemix Web 管理界面启动")
-    print("访问地址: http://0.0.0.0:5000")
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    print("=" * 50)
+    print(f"访问地址: http://0.0.0.0:5000")
+    print(f"默认密码: admin123")
+    print(f"")
+    print(f"修改密码方法:")
+    print(f"  export V2BX_WEB_PASSWORD_HASH=$(echo -n '你的密码' | sha256sum | cut -d' ' -f1)")
+    print(f"  systemctl restart v2bx-nodemix-web")
+    print("=" * 50)
+    app.run(host='0.0.0.0', port=5000, debug=False)
