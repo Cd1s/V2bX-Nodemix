@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>编辑配置 - {{ name }}</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/javascript/javascript.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f5f7fa; }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .container { max-width: 1400px; margin: 30px auto; padding: 0 20px; }
+        .tabs { display: flex; gap: 10px; margin-bottom: 20px; }
+        .tab { padding: 12px 24px; background: white; border: none; border-radius: 8px 8px 0 0; cursor: pointer; font-size: 15px; font-weight: 500; transition: all 0.3s; }
+        .tab.active { background: #667eea; color: white; }
+        .tab-content { display: none; background: white; padding: 25px; border-radius: 0 8px 8px 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .tab-content.active { display: block; }
+        .CodeMirror { height: 600px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; }
+        .actions { margin-top: 20px; display: flex; gap: 10px; }
+        .btn { padding: 12px 24px; border: none; border-radius: 6px; cursor: pointer; font-size: 15px; font-weight: 500; transition: all 0.3s; }
+        .btn-save { background: #28a745; color: white; }
+        .btn-save:hover { background: #218838; }
+        .btn-back { background: #6c757d; color: white; }
+        .btn-back:hover { background: #5a6268; }
+        .alert { padding: 15px; border-radius: 6px; margin-bottom: 20px; display: none; }
+        .alert.success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .alert.error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="container">
+            <h1>📝 编辑配置 - {{ name }}</h1>
+            <p>修改 V2bX 和 sing-box 配置文件</p>
+        </div>
+    </div>
+
+    <div class="container">
+        <div id="alert" class="alert"></div>
+        
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('sing')">sing_origin.json (核心配置)</button>
+            <button class="tab" onclick="switchTab('v2bx')">config.json (V2bX配置)</button>
+        </div>
+
+        <div id="sing-tab" class="tab-content active">
+            <h3>sing_origin.json - sing-box 核心配置(包含 WireGuard 出站)</h3>
+            <p style="margin: 10px 0; color: #666;">在这里配置 WireGuard 出站、路由规则等</p>
+            <textarea id="sing-editor">{{ sing_config | tojson(indent=2) }}</textarea>
+        </div>
+
+        <div id="v2bx-tab" class="tab-content">
+            <h3>config.json - V2bX 主配置</h3>
+            <p style="margin: 10px 0; color: #666;">配置面板连接、节点信息等</p>
+            <textarea id="v2bx-editor">{{ config | tojson(indent=2) }}</textarea>
+        </div>
+
+        <div class="actions">
+            <button class="btn btn-save" onclick="saveConfig()">💾 保存配置</button>
+            <button class="btn btn-back" onclick="history.back()">← 返回</button>
+        </div>
+    </div>
+
+    <script>
+    const singEditor = CodeMirror.fromTextArea(document.getElementById('sing-editor'), {
+        mode: 'application/json',
+        lineNumbers: true,
+        theme: 'default',
+        lineWrapping: true,
+        indentUnit: 2,
+        tabSize: 2
+    });
+
+    const v2bxEditor = CodeMirror.fromTextArea(document.getElementById('v2bx-editor'), {
+        mode: 'application/json',
+        lineNumbers: true,
+        theme: 'default',
+        lineWrapping: true,
+        indentUnit: 2,
+        tabSize: 2
+    });
+
+    function switchTab(tab) {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+        
+        if (tab === 'sing') {
+            document.querySelector('.tab:nth-child(1)').classList.add('active');
+            document.getElementById('sing-tab').classList.add('active');
+            singEditor.refresh();
+        } else {
+            document.querySelector('.tab:nth-child(2)').classList.add('active');
+            document.getElementById('v2bx-tab').classList.add('active');
+            v2bxEditor.refresh();
+        }
+    }
+
+    function showAlert(message, type) {
+        const alert = document.getElementById('alert');
+        alert.textContent = message;
+        alert.className = `alert ${type}`;
+        alert.style.display = 'block';
+        setTimeout(() => { alert.style.display = 'none'; }, 5000);
+    }
+
+    function saveConfig() {
+        const singConfig = singEditor.getValue();
+        const v2bxConfig = v2bxEditor.getValue();
+        
+        // 验证 JSON 格式
+        try {
+            JSON.parse(singConfig);
+            JSON.parse(v2bxConfig);
+        } catch (e) {
+            showAlert('JSON 格式错误: ' + e.message, 'error');
+            return;
+        }
+        
+        const formData = new FormData();
+        formData.append('sing_config', singConfig);
+        formData.append('v2bx_config', v2bxConfig);
+        
+        fetch(window.location.href, {
+            method: 'POST',
+            body: formData
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                showAlert('✓ 配置保存成功!', 'success');
+            } else {
+                showAlert('✗ 保存失败: ' + data.message, 'error');
+            }
+        })
+        .catch(e => {
+            showAlert('✗ 保存失败: ' + e.message, 'error');
+        });
+    }
+
+    // 快捷键保存
+    document.addEventListener('keydown', (e) => {
+        if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+            e.preventDefault();
+            saveConfig();
+        }
+    });
+    </script>
+</body>
+</html>

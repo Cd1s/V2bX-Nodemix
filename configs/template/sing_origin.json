@@ -1,0 +1,132 @@
+{
+  "dns": {
+    "servers": [
+      {
+        "tag": "dns_direct",
+        "address": "local",
+        "detour": "direct"
+      },
+      {
+        "tag": "dns_cf",
+        "address": "1.1.1.1",
+        "detour": "direct"
+      },
+      {
+        "tag": "dns_wg",
+        "address": "8.8.8.8",
+        "detour": "wg-out"
+      }
+    ],
+    "rules": [
+      {
+        "rule_set": [
+          "geosite-netflix",
+          "geosite-disney"
+        ],
+        "server": "dns_wg"
+      },
+      {
+        "server": "dns_direct"
+      }
+    ],
+    "fakeip": {
+      "enabled": true,
+      "inet4_range": "198.18.0.0/16"
+    }
+  },
+  "outbounds": [
+    {
+      "type": "direct",
+      "tag": "direct"
+    },
+    {
+      "type": "block",
+      "tag": "block"
+    },
+    {
+      "type": "wireguard",
+      "tag": "wg-out",
+      "server": "wg.example.com",
+      "server_port": 51820,
+      "system_interface": false,
+      "private_key": "your-wireguard-private-key",
+      "peer_public_key": "server-public-key",
+      "local_address": [
+        "10.0.1.2/16"
+      ],
+      "mtu": 1280,
+      "workers": 4
+    }
+  ],
+  "route": {
+    "rule_set": [
+      {
+        "tag": "geoip-cn",
+        "type": "remote",
+        "format": "binary",
+        "url": "https://raw.githubusercontent.com/SagerNet/sing-geoip/rule-set/geoip-cn.srs",
+        "download_detour": "direct"
+      },
+      {
+        "tag": "geosite-cn",
+        "type": "remote",
+        "format": "binary",
+        "url": "https://raw.githubusercontent.com/SagerNet/sing-geosite/rule-set/geosite-cn.srs",
+        "download_detour": "direct"
+      },
+      {
+        "tag": "geosite-category-ads-all",
+        "type": "remote",
+        "format": "binary",
+        "url": "https://raw.githubusercontent.com/SagerNet/sing-geosite/rule-set/geosite-category-ads-all.srs",
+        "download_detour": "direct"
+      },
+      {
+        "tag": "geosite-netflix",
+        "type": "remote",
+        "format": "binary",
+        "url": "https://raw.githubusercontent.com/SagerNet/sing-geosite/rule-set/geosite-netflix.srs",
+        "download_detour": "direct"
+      },
+      {
+        "tag": "geosite-disney",
+        "type": "remote",
+        "format": "binary",
+        "url": "https://raw.githubusercontent.com/SagerNet/sing-geosite/rule-set/geosite-disney.srs",
+        "download_detour": "direct"
+      }
+    ],
+    "rules": [
+      {
+        "rule_set": [
+          "geosite-netflix",
+          "geosite-disney"
+        ],
+        "outbound": "wg-out"
+      },
+      {
+        "ip_is_private": true,
+        "outbound": "block"
+      },
+      {
+        "rule_set": [
+          "geosite-category-ads-all",
+          "geosite-cn",
+          "geoip-cn"
+        ],
+        "outbound": "block"
+      },
+      {
+        "ip_cidr": [
+          "198.18.0.0/16"
+        ],
+        "outbound": "direct"
+      }
+    ]
+  },
+  "experimental": {
+    "cache_file": {
+      "enabled": true
+    }
+  }
+}

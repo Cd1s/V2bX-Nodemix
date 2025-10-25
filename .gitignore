@@ -1,0 +1,78 @@
+# V2bX-Nodemix .gitignore
+
+# V2bX 源代码(用户应该自己从官方仓库克隆)
+V2bX-source/
+
+# 二进制文件
+bin/
+*.exe
+
+# 运行时文件
+instances/
+*.pid
+
+# 日志文件
+*.log
+logs/
+
+# 配置文件(包含敏感信息 - 只保留模板)
+configs/*/
+!configs/template/
+
+# 密钥文件(绝对不能提交!)
+*.key
+*.pem
+*.cert
+*.crt
+privatekey
+publickey
+*_PRIVATE_KEY
+*_PUBKEY
+
+# 临时文件
+*.tmp
+*.temp
+*.swp
+*~
+
+# Python
+__pycache__/
+*.py[cod]
+*.so
+.Python
+venv/
+env/
+*.egg-info/
+
+# 系统文件
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE
+.vscode/
+.idea/
+*.iml
+
+# 压缩文件
+*.zip
+*.tar.gz
+*.rar
+
+# 备份文件
+*.bak
+*.backup
+backup/
+
+# 数据库
+*.db
+*.sqlite
+
+# 环境变量
+.env
+.env.local
+
+# 旧版本文件(已清理)
+FINAL_GUIDE.md
+*-v2.*
+

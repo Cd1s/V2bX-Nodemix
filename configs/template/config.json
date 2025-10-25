@@ -1,0 +1,31 @@
+{
+  "Log": {
+    "Level": "info",
+    "Output": ""
+  },
+  "Cores": [
+    {
+      "Type": "sing",
+      "Log": {
+        "Level": "info",
+        "Timestamp": true
+      },
+      "OriginalPath": "/opt/V2bX-Nodemix/configs/node1/sing_origin.json"
+    }
+  ],
+  "Nodes": [
+    {
+      "Core": "sing",
+      "ApiHost": "https://your-panel.com",
+      "ApiKey": "your-api-key",
+      "NodeID": 1,
+      "NodeType": "vless",
+      "Timeout": 30,
+      "ListenIP": "0.0.0.0",
+      "SendIP": "0.0.0.0",
+      "DeviceOnlineMinTraffic": 200,
+      "EnableDNS": false,
+      "DNSType": "AsIs"
+    }
+  ]
+}
