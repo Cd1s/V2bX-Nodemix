@@ -1,16 +1,11 @@
 {
   "Log": {
-    "Level": "info",
-    "Output": ""
+    "Level": "info"
   },
   "Cores": [
     {
       "Type": "sing",
-      "Log": {
-        "Level": "info",
-        "Timestamp": true
-      },
-      "OriginalPath": "/opt/V2bX-Nodemix/configs/node1/sing_origin.json"
+      "OriginalPath": "/opt/V2bX-Nodemix/configs/example/sing_origin.json"
     }
   ],
   "Nodes": [
@@ -19,13 +14,30 @@
       "ApiHost": "https://your-panel.com",
       "ApiKey": "your-api-key",
       "NodeID": 1,
-      "NodeType": "vless",
+      "NodeType": "shadowsocks",
       "Timeout": 30,
-      "ListenIP": "0.0.0.0",
+      "ListenIP": "::",
       "SendIP": "0.0.0.0",
-      "DeviceOnlineMinTraffic": 200,
-      "EnableDNS": false,
-      "DNSType": "AsIs"
+      "DeviceOnlineMinTraffic": 1000,
+      "TCPFastOpen": true,
+      "SniffEnabled": true,
+      "EnableDNS": true,
+      "CertConfig": {
+        "CertMode": "none",
+        "RejectUnknownSni": false,
+        "CertDomain": "example.com",
+        "CertFile": "/etc/V2bX/fullchain.cer",
+        "KeyFile": "/etc/V2bX/cert.key",
+        "Email": "v2bx@github.com",
+        "Provider": "cloudflare",
+        "DNSEnv": {
+          "EnvName": "env1"
+        }
+      },
+      "LimitConfig": {
+        "EnableDeviceLimit": true,
+        "DeviceLimit": 0
+      }
     }
   ]
 }

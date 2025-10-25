@@ -220,71 +220,37 @@ create_example_config() {
     EXAMPLE_DIR="$INSTALL_DIR/configs/example"
     mkdir -p "$EXAMPLE_DIR"
     
-    # 提示用户输入配置信息
-    echo ""
-    print_info "请输入面板信息（可稍后修改）："
-    
-    read -p "面板地址 (例: https://panel.example.com): " PANEL_URL
-    read -p "API Key: " API_KEY
-    read -p "节点 ID (例: 1): " NODE_ID
-    
-    # 生成 config.json
-    cat > "$EXAMPLE_DIR/config.json" <<EOF
-{
-  "Log": {
-    "Level": "info"
-  },
-  "Cores": [
-    {
-      "Type": "sing",
-      "OriginalPath": "$INSTALL_DIR/configs/example/sing_origin.json"
-    }
-  ],
-  "Nodes": [
-    {
-      "Core": "sing",
-      "ApiHost": "${PANEL_URL:-https://your-panel.com}",
-      "ApiKey": "${API_KEY:-your-api-key}",
-      "NodeID": ${NODE_ID:-1},
-      "NodeType": "vless",
-      "ListenIP": "0.0.0.0"
-    }
-  ]
-}
-EOF
-    
-    # 询问是否配置 WireGuard
-    echo ""
-    read -p "是否现在配置 WireGuard 出站？(y/n): " SETUP_WG
-    
-    if [[ "$SETUP_WG" == "y" ]]; then
-        read -p "WireGuard 服务器地址: " WG_SERVER
-        read -p "WireGuard 端口 (默认 51820): " WG_PORT
-        WG_PORT=${WG_PORT:-51820}
-        read -p "本地 IP 地址 (例: 10.0.1.2/16): " WG_LOCAL_IP
-        read -p "WireGuard 私钥: " WG_PRIVATE_KEY
-        read -p "WireGuard 服务器公钥: " WG_PUBLIC_KEY
+    # 直接复制模板文件，不做任何修改
+    if [ -f "$INSTALL_DIR/configs/template/config.json" ]; then
+        cp "$INSTALL_DIR/configs/template/config.json" "$EXAMPLE_DIR/config.json"
+        print_success "已创建 config.json (请手动编辑面板信息)"
     else
-        WG_SERVER="wg.example.com"
-        WG_PORT="51820"
-        WG_LOCAL_IP="10.0.1.2/16"
-        WG_PRIVATE_KEY="your-wireguard-private-key"
-        WG_PUBLIC_KEY="server-public-key"
+        print_error "模板文件不存在: $INSTALL_DIR/configs/template/config.json"
     fi
     
-    # 复制模板的 sing_origin.json
     if [ -f "$INSTALL_DIR/configs/template/sing_origin.json" ]; then
         cp "$INSTALL_DIR/configs/template/sing_origin.json" "$EXAMPLE_DIR/sing_origin.json"
-        
-        # 更新 WireGuard 配置
-        if [[ "$SETUP_WG" == "y" ]]; then
-            sed -i "s|wg.example.com|$WG_SERVER|" "$EXAMPLE_DIR/sing_origin.json"
-            sed -i "s|51820|$WG_PORT|" "$EXAMPLE_DIR/sing_origin.json"
-            sed -i "s|10.0.1.2/16|$WG_LOCAL_IP|" "$EXAMPLE_DIR/sing_origin.json"
-            sed -i "s|your-wireguard-private-key|$WG_PRIVATE_KEY|" "$EXAMPLE_DIR/sing_origin.json"
-            sed -i "s|server-public-key|$WG_PUBLIC_KEY|" "$EXAMPLE_DIR/sing_origin.json"
-        fi
+        print_success "已创建 sing_origin.json (请手动配置 WireGuard)"
+    else
+        print_error "模板文件不存在: $INSTALL_DIR/configs/template/sing_origin.json"
     fi
+    
+    # 更新 config.json 中的 OriginalPath 为正确路径
+    if [ -f "$EXAMPLE_DIR/config.json" ]; then
+        sed -i "s|\"OriginalPath\":.*|\"OriginalPath\": \"$INSTALL_DIR/configs/example/sing_origin.json\"|" "$EXAMPLE_DIR/config.json"
+    fi
+    
+    echo ""
+    print_warning "请手动编辑以下配置文件："
+    echo "  1. $EXAMPLE_DIR/config.json"
+    echo "     - 修改 ApiHost (面板地址)"
+    echo "     - 修改 ApiKey (API密钥)"
+    echo "     - 修改 NodeID (节点ID)"
+    echo "     - 修改 NodeType (节点类型: shadowsocks/vmess/vless等)"
+    echo ""
+    echo "  2. $EXAMPLE_DIR/sing_origin.json"
+    echo "     - 修改 WireGuard 配置 (server, private_key, peer_public_key 等)"
+    echo ""
     
     print_success "示例配置已创建: $EXAMPLE_DIR"
 }
