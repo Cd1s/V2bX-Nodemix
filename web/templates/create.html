@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>创建实例 - V2bX-Nodemix</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f7fa; }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .header-content { max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; }
+        .header h1 { font-size: 24px; }
+        .nav-buttons { display: flex; gap: 10px; }
+        .btn { padding: 10px 18px; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; text-decoration: none; display: inline-block; transition: all 0.3s; }
+        .btn-back { background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.4); }
+        .container { max-width: 900px; margin: 30px auto; padding: 0 20px; }
+        .card { background: white; border-radius: 10px; padding: 30px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 20px; }
+        .card h2 { font-size: 20px; margin-bottom: 20px; color: #333; border-bottom: 2px solid #667eea; padding-bottom: 10px; }
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; color: #333; font-size: 14px; font-weight: 500; margin-bottom: 8px; }
+        .form-group input, .form-group select { width: 100%; padding: 12px 15px; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 14px; }
+        .form-group input:focus, .form-group select:focus { outline: none; border-color: #667eea; }
+        .form-group small { color: #666; font-size: 12px; }
+        .checkbox-group { display: flex; align-items: center; gap: 10px; }
+        .checkbox-group input[type="checkbox"] { width: auto; }
+        .wg-section { background: #f8f9fa; padding: 20px; border-radius: 6px; margin-top: 10px; display: none; }
+        .wg-section.active { display: block; }
+        .btn-primary { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 30px; font-weight: 600; border: none; border-radius: 6px; cursor: pointer; }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4); }
+        .alert { padding: 15px; border-radius: 6px; margin-bottom: 20px; }
+        .alert-success { background: #d4edda; color: #155724; border-left: 4px solid #28a745; }
+        .alert-error { background: #f8d7da; color: #721c24; border-left: 4px solid #dc3545; }
+        .btn-generate { background: #28a745; color: white; padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer; font-size: 13px; margin-top: 5px; }
+        .btn-generate:hover { background: #218838; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-content">
+            <h1>➕ 创建新实例</h1>
+            <div class="nav-buttons">
+                <a href="/" class="btn btn-back">返回首页</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div id="message"></div>
+
+        <form id="createForm">
+            <div class="card">
+                <h2>基本信息</h2>
+                <div class="form-group">
+                    <label for="name">实例名称 *</label>
+                    <input type="text" id="name" name="name" placeholder="例如: node1" required pattern="[a-zA-Z0-9_-]+">
+                    <small>只能包含字母、数字、下划线和横线</small>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>面板配置</h2>
+                <div class="form-group">
+                    <label for="api_host">面板地址 *</label>
+                    <input type="text" id="api_host" name="api_host" placeholder="https://your-panel.com" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="api_key">API Key *</label>
+                    <input type="text" id="api_key" name="api_key" placeholder="your-api-key" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="node_id">节点 ID *</label>
+                    <input type="number" id="node_id" name="node_id" value="1" required min="1">
+                </div>
+
+                <div class="form-group">
+                    <label for="node_type">节点类型</label>
+                    <select id="node_type" name="node_type">
+                        <option value="shadowsocks">Shadowsocks</option>
+                        <option value="vless">VLESS</option>
+                        <option value="vmess">VMess</option>
+                        <option value="trojan">Trojan</option>
+                        <option value="hysteria">Hysteria</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>WireGuard 出站 (可选)</h2>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="use_wireguard" name="use_wireguard">
+                    <label for="use_wireguard">启用 WireGuard 出站</label>
+                </div>
+
+                <div class="wg-section" id="wgSection">
+                    <div class="form-group">
+                        <label for="wg_server">WireGuard 服务器</label>
+                        <input type="text" id="wg_server" name="wg_server" placeholder="wg.example.com">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="wg_port">端口</label>
+                        <input type="number" id="wg_port" name="wg_port" value="51820" min="1" max="65535">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="wg_private_key">客户端私钥</label>
+                        <input type="text" id="wg_private_key" name="wg_private_key" placeholder="生成密钥或手动输入">
+                        <button type="button" class="btn-generate" onclick="generateWGKey()">🔑 生成密钥对</button>
+                        <small id="public_key_display" style="display:none; color:#28a745; margin-top:5px;"></small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="wg_public_key">服务器公钥</label>
+                        <input type="text" id="wg_public_key" name="wg_public_key" placeholder="从服务器管理员获取">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="wg_local_ip">本地 IP</label>
+                        <input type="text" id="wg_local_ip" name="wg_local_ip" value="10.0.1.2/16">
+                    </div>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary">创建实例</button>
+        </form>
+    </div>
+
+    <script>
+        // 切换 WireGuard 配置显示
+        document.getElementById('use_wireguard').addEventListener('change', (e) => {
+            document.getElementById('wgSection').classList.toggle('active', e.target.checked);
+        });
+
+        // 生成 WireGuard 密钥对
+        async function generateWGKey() {
+            const msgDiv = document.getElementById('message');
+            msgDiv.innerHTML = '<div class="alert alert-success">正在生成密钥对，请稍候...</div>';
+            
+            try {
+                // 使用 Web Crypto API 生成随机密钥（模拟）
+                const array = new Uint8Array(32);
+                crypto.getRandomValues(array);
+                const privateKey = btoa(String.fromCharCode(...array));
+                
+                document.getElementById('wg_private_key').value = privateKey;
+                
+                msgDiv.innerHTML = '<div class="alert alert-success">✅ 已生成私钥。请使用命令 `wg pubkey` 从私钥生成公钥，或在服务器上运行 `V2bX x25519` 生成完整密钥对。</div>';
+                
+                setTimeout(() => msgDiv.innerHTML = '', 5000);
+            } catch (error) {
+                msgDiv.innerHTML = `<div class="alert alert-error">生成失败: ${error}</div>`;
+            }
+        }
+
+        // 提交表单
+        document.getElementById('createForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = new FormData(e.target);
+            const messageDiv = document.getElementById('message');
+            
+            messageDiv.innerHTML = '<div class="alert alert-success">正在创建实例...</div>';
+            
+            try {
+                const response = await fetch('/create', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    messageDiv.innerHTML = `<div class="alert alert-success">${result.message}</div>`;
+                    setTimeout(() => {
+                        window.location.href = result.redirect || '/';
+                    }, 1000);
+                } else {
+                    messageDiv.innerHTML = `<div class="alert alert-error">${result.message}</div>`;
+                }
+            } catch (error) {
+                messageDiv.innerHTML = `<div class="alert alert-error">创建失败: ${error}</div>`;
+            }
+        });
+    </script>
+</body>
+</html>

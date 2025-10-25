@@ -16,14 +16,20 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = os.urandom(24).hex()
 
 # 默认管理密码 (SHA256): admin123
-# 可以通过环境变量 V2BX_WEB_PASSWORD 设置
+# 可以通过 .password 文件设置
 DEFAULT_PASSWORD_HASH = '240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9'  # admin123
-ADMIN_PASSWORD_HASH = os.getenv('V2BX_WEB_PASSWORD_HASH', DEFAULT_PASSWORD_HASH)
 
 BASE_DIR = Path(__file__).parent.parent
 CONFIGS_DIR = BASE_DIR / 'configs'
 INSTANCES_DIR = BASE_DIR / 'instances'
 MANAGER_SCRIPT = BASE_DIR / 'v2bx-manager.sh'
+PASSWORD_FILE = BASE_DIR / '.password'
+
+def get_password_hash():
+    """获取密码哈希"""
+    if PASSWORD_FILE.exists():
+        return PASSWORD_FILE.read_text().strip()
+    return DEFAULT_PASSWORD_HASH
 
 def hash_password(password):
     """SHA256 哈希密码"""
@@ -43,7 +49,7 @@ def login():
     """登录页面"""
     if request.method == 'POST':
         password = request.form.get('password', '')
-        if hash_password(password) == ADMIN_PASSWORD_HASH:
+        if hash_password(password) == get_password_hash():
             session['logged_in'] = True
             return redirect(url_for('index'))
         else:
@@ -246,6 +252,154 @@ def api_logs(name):
         return jsonify({'logs': result.stdout})
     except Exception as e:
         return jsonify({'logs': f'读取日志失败: {str(e)}'})
+
+@app.route('/settings', methods=['GET', 'POST'])
+@login_required
+def settings():
+    """系统设置"""
+    if request.method == 'POST':
+        action = request.form.get('action')
+        
+        if action == 'change_password':
+            new_password = request.form.get('new_password')
+            confirm_password = request.form.get('confirm_password')
+            
+            if not new_password or len(new_password) < 6:
+                return jsonify({'success': False, 'message': '密码至少6个字符'})
+            
+            if new_password != confirm_password:
+                return jsonify({'success': False, 'message': '两次密码不一致'})
+            
+            # 保存密码到配置文件
+            password_file = BASE_DIR / '.password'
+            new_hash = hash_password(new_password)
+            password_file.write_text(new_hash)
+            
+            return jsonify({'success': True, 'message': '密码已更新，请重新登录'})
+    
+    return render_template('settings.html')
+
+@app.route('/create', methods=['GET', 'POST'])
+@login_required
+def create_instance():
+    """创建新实例"""
+    if request.method == 'POST':
+        try:
+            name = request.form.get('name', '').strip()
+            
+            # 验证实例名
+            if not name or not name.replace('-', '').replace('_', '').isalnum():
+                return jsonify({'success': False, 'message': '实例名只能包含字母、数字、下划线和横线'})
+            
+            instance_dir = CONFIGS_DIR / name
+            if instance_dir.exists():
+                return jsonify({'success': False, 'message': '实例已存在'})
+            
+            # 创建实例目录
+            instance_dir.mkdir(parents=True)
+            
+            # 获取表单数据
+            api_host = request.form.get('api_host', 'https://your-panel.com')
+            api_key = request.form.get('api_key', 'your-api-key')
+            node_id = request.form.get('node_id', '1')
+            node_type = request.form.get('node_type', 'shadowsocks')
+            
+            # 创建 config.json
+            config = {
+                "Log": {"Level": "info"},
+                "Cores": [{
+                    "Type": "sing",
+                    "OriginalPath": f"/opt/V2bX-Nodemix/configs/{name}/sing_origin.json"
+                }],
+                "Nodes": [{
+                    "Core": "sing",
+                    "ApiHost": api_host,
+                    "ApiKey": api_key,
+                    "NodeID": int(node_id),
+                    "NodeType": node_type,
+                    "Timeout": 30,
+                    "ListenIP": "::",
+                    "SendIP": "0.0.0.0",
+                    "DeviceOnlineMinTraffic": 1000,
+                    "TCPFastOpen": True,
+                    "SniffEnabled": True,
+                    "EnableDNS": True,
+                    "CertConfig": {
+                        "CertMode": "none",
+                        "RejectUnknownSni": False,
+                        "CertDomain": "example.com",
+                        "CertFile": "/etc/V2bX/fullchain.cer",
+                        "KeyFile": "/etc/V2bX/cert.key",
+                        "Email": "v2bx@github.com",
+                        "Provider": "cloudflare",
+                        "DNSEnv": {"EnvName": "env1"}
+                    },
+                    "LimitConfig": {
+                        "EnableDeviceLimit": True,
+                        "DeviceLimit": 0
+                    }
+                }]
+            }
+            
+            with open(instance_dir / 'config.json', 'w', encoding='utf-8') as f:
+                json.dump(config, f, indent=2, ensure_ascii=False)
+            
+            # 创建 sing_origin.json
+            use_wireguard = request.form.get('use_wireguard') == 'on'
+            
+            outbounds = [
+                {"type": "direct", "tag": "direct"},
+                {"type": "block", "tag": "block"}
+            ]
+            
+            if use_wireguard:
+                wg_server = request.form.get('wg_server', 'wg.example.com')
+                wg_port = request.form.get('wg_port', '51820')
+                wg_private_key = request.form.get('wg_private_key', 'REPLACE_WITH_YOUR_PRIVATE_KEY')
+                wg_public_key = request.form.get('wg_public_key', 'REPLACE_WITH_SERVER_PUBLIC_KEY')
+                wg_local_ip = request.form.get('wg_local_ip', '10.0.1.2/16')
+                
+                outbounds.insert(0, {
+                    "type": "wireguard",
+                    "tag": "wg-out",
+                    "server": wg_server,
+                    "server_port": int(wg_port),
+                    "system_interface": False,
+                    "private_key": wg_private_key,
+                    "peer_public_key": wg_public_key,
+                    "local_address": [wg_local_ip],
+                    "mtu": 1280,
+                    "workers": 4
+                })
+            
+            sing_config = {
+                "dns": {
+                    "servers": [
+                        {"tag": "dns_direct", "address": "local", "detour": "direct"},
+                        {"tag": "dns_cf", "address": "1.1.1.1", "detour": "direct"}
+                    ],
+                    "rules": [{"server": "dns_direct"}],
+                    "fakeip": {"enabled": True, "inet4_range": "198.18.0.0/16"}
+                },
+                "outbounds": outbounds,
+                "route": {
+                    "rules": [
+                        {"ip_is_private": True, "outbound": "block"},
+                        {"ip_cidr": ["198.18.0.0/16"], "outbound": "direct"}
+                    ]
+                },
+                "experimental": {"cache_file": {"enabled": True}}
+            }
+            
+            with open(instance_dir / 'sing_origin.json', 'w', encoding='utf-8') as f:
+                json.dump(sing_config, f, indent=2, ensure_ascii=False)
+            
+            return jsonify({'success': True, 'message': f'实例 {name} 创建成功', 'redirect': f'/edit/{name}'})
+            
+        except Exception as e:
+            return jsonify({'success': False, 'message': f'创建失败: {str(e)}'})
+    
+    return render_template('create.html')
 
 if __name__ == '__main__':
     # 创建必要的目录
