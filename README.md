@@ -1,6 +1,46 @@
 # V2bX-Nodemix
 
-V2bX 多实例管理系统 - 支持 WireGuard 出站 + Web 界面
+> 基于 sing-box 的 V2bX 多实例管理系统
+
+在单台服务器上运行多个 V2bX 实例，每个实例通过 sing-box 内置的 WireGuard 使用不同的出口节点。
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+## ✨ 特性
+
+- 🚀 **多实例管理** - 一台服务器运行多个 V2bX 实例
+- 🔐 **WireGuard 出站** - 每个实例独立 WireGuard 配置
+- 🌐 **Web 管理界面** - 在线编辑配置文件
+- 🎮 **交互式控制台** - 17项管理功能
+- 🔄 **批量操作** - 一键启动/停止所有实例
+- 🚦 **开机自启** - systemd 服务管理
+- 📦 **一键安装** - 自动检测环境并完成配置
+
+## 📁 项目结构
+
+```
+V2bX-Nodemix/
+├── v2bx-nodemix.sh          # 交互式管理控制台
+├── v2bx-manager.sh          # 实例管理脚本
+├── install.sh               # 一键安装脚本
+├── update.sh                # 更新脚本
+├── configs/                 # 配置文件目录
+│   ├── template/           # 配置模板
+│   │   ├── config.json
+│   │   └── sing_origin.json
+│   └── 实例名/              # 各实例配置
+│       ├── config.json
+│       └── sing_origin.json
+├── instances/               # 运行时目录
+│   └── 实例名/
+│       ├── V2bX            # V2bX 二进制
+│       ├── pid             # 进程 PID
+│       └── logs/           # 日志文件
+└── web/                     # Web 管理界面
+    ├── app.py              # Flask 后端
+    ├── start-web.sh        # 启动脚本
+    └── templates/          # HTML 模板
+```
 
 ---
 
