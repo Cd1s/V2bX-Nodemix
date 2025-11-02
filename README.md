@@ -1,4 +1,4 @@
-# V2bX-Nodemix# V2bX-Nodemix# V2bX-Nodemix# V2bX-Nodemix
+# V2bX-Nodemix# V2bX-Nodemix# V2bX-Nodemix# V2bX-Nodemix# V2bX-Nodemix
 
 
 
@@ -6,7 +6,7 @@ V2bX 多实例管理系统 - 支持 WireGuard 出站 + Web 界面
 
 
 
----V2bX 多实例管理系统 - 支持独立 WireGuard 出站 + Web 管理界面
+---V2bX 多实例管理系统 - 支持 WireGuard 出站 + Web 界面
 
 
 
@@ -14,39 +14,15 @@ V2bX 多实例管理系统 - 支持 WireGuard 出站 + Web 界面
 
 
 
-```bash## 一键安装> V2bX 多实例管理系统 - 支持 WireGuard 出站 + Web 管理界面> 基于 sing-box 的 V2bX 多实例管理系统
+```bash---V2bX 多实例管理系统 - 支持独立 WireGuard 出站 + Web 管理界面
 
-wget -O install.sh https://raw.githubusercontent.com/Cd1s/V2bX-Nodemix/main/install.sh
-
-chmod +x install.sh
-
-sudo bash install.sh
-
-``````bash
-
-
-
-安装完成后运行:wget -O install.sh https://raw.githubusercontent.com/Cd1s/V2bX-Nodemix/main/install.sh
-
-```bash
-
-v2bx-nodemixchmod +x install.sh一台服务器运行多个 V2bX 实例,每个实例通过 sing-box 配置独立的 WireGuard 出口节点。在单台服务器上运行多个 V2bX 实例，每个实例通过 sing-box 内置的 WireGuard 使用不同的出口节点。
+bash <(curl -fsSL https://raw.githubusercontent.com/Cd1s/V2bX-Nodemix/main/install.sh)
 
 ```
 
-sudo bash install.sh
-
----
-
-```
-
-## 管理脚本
 
 
-
-### 交互式界面
-
-安装完成后运行: `v2bx-nodemix`## ✨ 核心功能[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+安装完成后运行:## 一键安装
 
 ```bash
 
@@ -54,39 +30,59 @@ v2bx-nodemix
 
 ```
 
+```bash## 一键安装> V2bX 多实例管理系统 - 支持 WireGuard 出站 + Web 管理界面> 基于 sing-box 的 V2bX 多实例管理系统
+
 ---
 
-17 项管理功能:
+wget -O install.sh https://raw.githubusercontent.com/Cd1s/V2bX-Nodemix/main/install.sh
 
-- 实例管理: 启动/停止/重启/删除/查看日志
+## 管理脚本
 
-- 批量操作: 启动所有/停止所有/重启所有
+chmod +x install.sh
 
-- 自启管理: 开启/关闭开机自启## 管理脚本- 🚀 多实例管理 - 单服务器运行多个 V2bX 节点## ✨ 特性
+### 交互式界面
 
-- 系统管理: 修改密码/升级/卸载
-
-
-
-### 命令行模式
-
-### 交互式管理界面- 🔐 WireGuard 出站 - 每个实例独立 WireGuard 配置
+sudo bash install.sh
 
 ```bash
 
-v2bx-nodemix start <实例名>      # 启动
-
-v2bx-nodemix stop <实例名>       # 停止
-
-v2bx-nodemix restart <实例名>    # 重启```bash- 🌐 Web 管理界面 - 在线管理实例和配置- 🚀 **多实例管理** - 一台服务器运行多个 V2bX 实例
-
-v2bx-nodemix logs <实例名>       # 日志
-
-v2bx-nodemix status              # 状态v2bx-nodemix
+v2bx-nodemix``````bash
 
 ```
 
-```- 🎮 交互式控制台 - 17项管理功能- 🔐 **WireGuard 出站** - 在 `sing_origin.json` 中配置 WireGuard
+
+
+17 项管理功能:
+
+- 实例管理: 启动/停止/重启/删除/查看日志安装完成后运行:wget -O install.sh https://raw.githubusercontent.com/Cd1s/V2bX-Nodemix/main/install.sh
+
+- 批量操作: 启动所有/停止所有/重启所有
+
+- 自启管理: 开启/关闭开机自启```bash
+
+- 系统管理: 修改密码/升级/卸载
+
+v2bx-nodemixchmod +x install.sh一台服务器运行多个 V2bX 实例,每个实例通过 sing-box 配置独立的 WireGuard 出口节点。在单台服务器上运行多个 V2bX 实例，每个实例通过 sing-box 内置的 WireGuard 使用不同的出口节点。
+
+### 命令行模式
+
+```
+
+```bash
+
+v2bx-nodemix start <实例名>      # 启动sudo bash install.sh
+
+v2bx-nodemix stop <实例名>       # 停止
+
+v2bx-nodemix restart <实例名>    # 重启---
+
+v2bx-nodemix logs <实例名>       # 日志
+
+v2bx-nodemix status              # 状态```
+
+```
+
+## 管理脚本
 
 ---
 
@@ -94,77 +90,248 @@ v2bx-nodemix status              # 状态v2bx-nodemix
 
 ## Web 管理界面
 
-提供 17 项功能:- 🔄 批量操作 - 一键启动/停止所有实例- 🌐 **Web 管理界面** - 在线编辑配置文件
+### 交互式界面
 
 访问地址: `http://服务器IP:5000`
 
-- 实例管理 (启动/停止/重启/删除/日志)
+安装完成后运行: `v2bx-nodemix`## ✨ 核心功能[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 默认密码: `admin123`
 
-- 批量操作 (启动所有/停止所有/重启所有)- 🚦 开机自启 - systemd 服务管理- ⚡ **简单高效** - 无需系统级 WireGuard 接口
+```bash
 
 功能:
 
-- 实例状态监控- 自启管理 (开启/关闭开机自启)
+- 实例状态监控v2bx-nodemix
 
 - 在线编辑配置
 
-- 启动/停止/重启实例- 系统管理 (修改密码/升级/卸载)- 📦 一键安装 - 自动处理所有依赖- 🔌 **插件式设计** - 可作为 V2bX 的扩展插件使用
+- 启动/停止/重启实例```
 
 - 查看实时日志
 
-- 创建/删除实例
+- 创建/删除实例---
 
 
 
-修改密码: `v2bx-nodemix` → `14) 修改 Web 密码`### 命令行模式- 📦 **一键安装** - 自动检测环境并完成配置
+修改密码: `v2bx-nodemix` → `14) 修改 Web 密码`17 项管理功能:
+
+
+
+---- 实例管理: 启动/停止/重启/删除/查看日志
+
+
+
+## 配置说明- 批量操作: 启动所有/停止所有/重启所有
+
+
+
+### 配置目录- 自启管理: 开启/关闭开机自启## 管理脚本- 🚀 多实例管理 - 单服务器运行多个 V2bX 节点## ✨ 特性
+
+
+
+```- 系统管理: 修改密码/升级/卸载
+
+/opt/V2bX-Nodemix/configs/
+
+├── 实例1/
+
+│   ├── config.json          # V2bX 配置
+
+│   └── sing_origin.json     # sing-box 配置### 命令行模式
+
+├── 实例2/
+
+│   └── ...### 交互式管理界面- 🔐 WireGuard 出站 - 每个实例独立 WireGuard 配置
+
+└── template/                # 模板
+
+``````bash
+
+
+
+### config.jsonv2bx-nodemix start <实例名>      # 启动
+
+
+
+```jsonv2bx-nodemix stop <实例名>       # 停止
+
+{
+
+  "Log": { "Level": "info" },v2bx-nodemix restart <实例名>    # 重启```bash- 🌐 Web 管理界面 - 在线管理实例和配置- 🚀 **多实例管理** - 一台服务器运行多个 V2bX 实例
+
+  "Cores": [{
+
+    "Type": "sing",v2bx-nodemix logs <实例名>       # 日志
+
+    "OriginalPath": "/opt/V2bX-Nodemix/configs/实例名/sing_origin.json"
+
+  }],v2bx-nodemix status              # 状态v2bx-nodemix
+
+  "Nodes": [{
+
+    "Core": "sing",```
+
+    "ApiHost": "https://your-panel.com",
+
+    "ApiKey": "your-api-key",```- 🎮 交互式控制台 - 17项管理功能- 🔐 **WireGuard 出站** - 在 `sing_origin.json` 中配置 WireGuard
+
+    "NodeID": 1,
+
+    "NodeType": "vless",---
+
+    "ListenIP": "0.0.0.0"
+
+  }]
+
+}
+
+```## Web 管理界面
+
+
+
+### sing_origin.json提供 17 项功能:- 🔄 批量操作 - 一键启动/停止所有实例- 🌐 **Web 管理界面** - 在线编辑配置文件
+
+
+
+```json访问地址: `http://服务器IP:5000`
+
+{
+
+  "outbounds": [- 实例管理 (启动/停止/重启/删除/日志)
+
+    { "type": "direct", "tag": "direct" },
+
+    {默认密码: `admin123`
+
+      "type": "wireguard",
+
+      "tag": "wg-out",- 批量操作 (启动所有/停止所有/重启所有)- 🚦 开机自启 - systemd 服务管理- ⚡ **简单高效** - 无需系统级 WireGuard 接口
+
+      "server": "wg.example.com",
+
+      "server_port": 51820,功能:
+
+      "system_interface": false,
+
+      "private_key": "你的私钥",- 实例状态监控- 自启管理 (开启/关闭开机自启)
+
+      "peer_public_key": "服务器公钥",
+
+      "local_address": ["10.0.1.2/16"]- 在线编辑配置
+
+    }
+
+  ],- 启动/停止/重启实例- 系统管理 (修改密码/升级/卸载)- 📦 一键安装 - 自动处理所有依赖- 🔌 **插件式设计** - 可作为 V2bX 的扩展插件使用
+
+  "route": {
+
+    "rules": [- 查看实时日志
+
+      { "geosite": ["netflix"], "outbound": "wg-out" }
+
+    ],- 创建/删除实例
+
+    "final": "wg-out"
+
+  }
+
+}
+
+```修改密码: `v2bx-nodemix` → `14) 修改 Web 密码`### 命令行模式- 📦 **一键安装** - 自动检测环境并完成配置
+
+
+
+生成 WireGuard 密钥:
+
+```bash
+
+V2bX x25519---
+
+```
 
 
 
 ---
 
-
-
 ## 配置说明```bash---
 
+## 更新
 
 
-### 配置目录v2bx-nodemix start <实例名>      # 启动实例
 
+方法1: 管理界面
 
+```bash### 配置目录v2bx-nodemix start <实例名>      # 启动实例
+
+v2bx-nodemix
+
+# 选择 16) 升级 V2bX-Nodemix
+
+```
 
 ```v2bx-nodemix stop <实例名>       # 停止实例## 📁 项目结构
 
-/opt/V2bX-Nodemix/configs/
+方法2: 命令行
 
-├── 实例1/v2bx-nodemix restart <实例名>    # 重启实例
+```bash/opt/V2bX-Nodemix/configs/
+
+cd /opt/V2bX-Nodemix
+
+sudo bash update.sh├── 实例1/v2bx-nodemix restart <实例名>    # 重启实例
+
+```
 
 │   ├── config.json          # V2bX 配置
 
+---
+
 │   └── sing_origin.json     # sing-box 配置v2bx-nodemix logs <实例名>       # 查看日志## 🚀 安装
+
+## 卸载
 
 ├── 实例2/
 
-│   └── ...v2bx-nodemix status              # 查看状态
+方法1: 管理界面
 
-└── template/                # 模板
+```bash│   └── ...v2bx-nodemix status              # 查看状态
+
+v2bx-nodemix
+
+# 选择 17) 卸载 V2bX-Nodemix└── template/                # 模板
+
+```
 
 `````````
 
+方法2: 命令行
+
+```bash
+
+systemctl stop v2bx-nodemix-web v2bx-nodemix-instances
+
+rm -rf /opt/V2bX-Nodemix### config.json
+
+rm -f /usr/local/bin/v2bx-nodemix
+
+rm -f /etc/systemd/system/v2bx-nodemix-*.service
+
+systemctl daemon-reload
+
+``````json---```bashV2bX-Nodemix/
 
 
-### config.json
+
+---{
 
 
 
-```json---```bashV2bX-Nodemix/
+## 许可证  "Log": { "Level": "info" },
 
-{
 
-  "Log": { "Level": "info" },
 
-  "Cores": [{
+MIT License  "Cores": [{
+
 
     "Type": "sing",## Web 管理界面wget -O install.sh https://raw.githubusercontent.com/Cd1s/V2bX-Nodemix/main/install.sh├── v2bx-manager.sh             # 实例管理脚本
 
