@@ -1,4 +1,4 @@
-# V2bX-Nodemix
+﻿# V2bX-Nodemix
 
 > 基于 sing-box 的 V2bX 多实例管理系统
 

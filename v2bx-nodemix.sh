@@ -475,21 +475,6 @@ upgrade_system() {
         return 1
     fi
 }
-        
-        if [[ -d "$BACKUP_DIR" ]]; then
-            echo "配置备份: $BACKUP_DIR"
-            echo "如无问题可删除: rm -rf $BACKUP_DIR"
-        fi
-    else
-        log_error "下载失败,请检查网络连接"
-        log_info "手动升级方法:"
-        echo "  1. cd /tmp"
-        echo "  2. wget https://github.com/Cd1s/V2bX-Nodemix/archive/refs/heads/main.zip"
-        echo "  3. unzip main.zip"
-        echo "  4. rsync -av --exclude='configs' V2bX-Nodemix-main/ $BASE_DIR/"
-        return 1
-    fi
-}
 
 # 卸载系统
 uninstall_system() {
