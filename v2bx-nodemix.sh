@@ -485,7 +485,7 @@ select_instance() {
         return 1
     fi
     
-    echo -e "\n${BOLD}${GREEN}可用实例:${NC}"
+    echo -e "\n${BOLD}${GREEN}可用实例:${NC}" >&2
     local i=1
     local instance_array=()
     
@@ -495,19 +495,19 @@ select_instance() {
         if is_running "$name"; then
             status="${GREEN}运行中${NC}"
         fi
-        printf "  ${CYAN}%-3s${NC} %-20s %b\n" "$i." "$name" "$status"
+        printf "  ${CYAN}%-3s${NC} %-20s %b\n" "$i." "$name" "$status" >&2
         ((i++))
     done
     
-    echo ""
-    read -p "选择实例编号 [1-${#instance_array[@]}]: " choice
+    echo "" >&2
+    read -p "选择实例编号 [1-${#instance_array[@]}]: " choice >&2
     
     if [[ "$choice" =~ ^[0-9]+$ ]] && [[ $choice -ge 1 ]] && [[ $choice -le ${#instance_array[@]} ]]; then
         selected_instance="${instance_array[$((choice-1))]}"
         echo "$selected_instance"
         return 0
     else
-        log_error "无效选择"
+        log_error "无效选择" >&2
         return 1
     fi
 }
