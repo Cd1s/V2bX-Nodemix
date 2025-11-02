@@ -45,7 +45,10 @@ V2bX-Nodemix/
 ### 方式一：一键安装（推荐）
 
 ```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/Cd1s/V2bX-Nodemix/main/install.sh)
+# 下载并运行安装脚本
+wget -O install.sh https://raw.githubusercontent.com/Cd1s/V2bX-Nodemix/main/install.sh
+chmod +x install.sh
+sudo ./install.sh
 ```
 
 安装脚本会自动：
@@ -121,11 +124,11 @@ cd ..
 
 ```bash
 # 克隆仓库
-git clone https://github.com/Cd1s/V2bX-Nodemix.git
+git clone https://github.com/你的用户名/V2bX-Nodemix.git
 cd V2bX-Nodemix
 
 # 或者下载 zip
-wget https://github.com/Cd1s/V2bX-Nodemix/archive/main.zip
+wget https://github.com/你的用户名/V2bX-Nodemix/archive/main.zip
 unzip main.zip
 cd V2bX-Nodemix-main
 ```

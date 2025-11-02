@@ -295,21 +295,48 @@ upgrade_system() {
     clear
     echo -e "${BOLD}${GREEN}=== 升级 V2bX-Nodemix ===${NC}\n"
     
-    log_info "从 GitHub 拉取最新代码..."
-    
-    cd "$BASE_DIR"
+    log_info "从 GitHub 下载最新代码..."
     
     # 备份当前配置
-    if [[ -d "configs" ]]; then
+    if [[ -d "$BASE_DIR/configs" ]]; then
         log_info "备份当前配置..."
-        cp -r configs configs.backup.$(date +%Y%m%d_%H%M%S)
+        BACKUP_DIR="$BASE_DIR/configs.backup.$(date +%Y%m%d_%H%M%S)"
+        cp -r "$BASE_DIR/configs" "$BACKUP_DIR"
+        log_success "配置已备份到: $BACKUP_DIR"
     fi
     
-    # 拉取更新
-    git pull origin main
+    # 备份密码文件
+    if [[ -f "$PASSWORD_FILE" ]]; then
+        cp "$PASSWORD_FILE" "/tmp/.v2bx-password.bak"
+    fi
     
-    if [[ $? -eq 0 ]]; then
-        log_success "代码已更新"
+    # 下载最新版本
+    cd /tmp
+    rm -rf V2bX-Nodemix-main V2bX-Nodemix.zip 2>/dev/null
+    
+    log_info "下载最新版本..."
+    if wget -q --show-progress "https://github.com/Cd1s/V2bX-Nodemix/archive/refs/heads/main.zip" -O V2bX-Nodemix.zip; then
+        log_success "下载完成"
+        
+        log_info "解压并更新文件..."
+        unzip -q -o V2bX-Nodemix.zip
+        
+        # 保留配置目录和密码文件，更新其他文件
+        rsync -av --exclude='configs' --exclude='.password' V2bX-Nodemix-main/ "$BASE_DIR/"
+        
+        # 恢复密码文件
+        if [[ -f "/tmp/.v2bx-password.bak" ]]; then
+            mv "/tmp/.v2bx-password.bak" "$PASSWORD_FILE"
+        fi
+        
+        # 设置权限
+        chmod +x "$BASE_DIR/v2bx-nodemix.sh"
+        chmod +x "$BASE_DIR/v2bx-manager.sh"
+        
+        # 清理临时文件
+        rm -rf V2bX-Nodemix-main V2bX-Nodemix.zip
+        
+        log_success "文件已更新"
         
         # 重启 Web 服务
         if systemctl is-active --quiet v2bx-nodemix-web; then
@@ -318,9 +345,31 @@ upgrade_system() {
             log_success "Web 服务已重启"
         fi
         
+        echo ""
         log_success "升级完成！"
+        echo ""
+        echo "已保留:"
+        echo "  ✓ 所有配置文件 (configs/)"
+        echo "  ✓ Web 管理密码"
+        echo ""
+        echo "已更新:"
+        echo "  ✓ 管理脚本"
+        echo "  ✓ Web 界面"
+        echo "  ✓ 文档"
+        echo ""
+        
+        if [[ -d "$BACKUP_DIR" ]]; then
+            echo "配置备份: $BACKUP_DIR"
+            echo "如无问题可删除: rm -rf $BACKUP_DIR"
+        fi
     else
-        log_error "升级失败,请检查网络连接或手动执行 git pull"
+        log_error "下载失败,请检查网络连接"
+        log_info "手动升级方法:"
+        echo "  1. cd /tmp"
+        echo "  2. wget https://github.com/Cd1s/V2bX-Nodemix/archive/refs/heads/main.zip"
+        echo "  3. unzip main.zip"
+        echo "  4. rsync -av --exclude='configs' V2bX-Nodemix-main/ $BASE_DIR/"
+        return 1
     fi
 }
 
