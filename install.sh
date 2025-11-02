@@ -54,37 +54,38 @@ detect_system() {
 install_dependencies() {
     print_info "安装依赖包..."
     
-    if [[ "$OS" == "ubuntu" ]] || [[ "$OS" == "debian" ]]; then
-        apt update
-        apt install -y python3 python3-pip python3-venv wget curl unzip
-    elif [[ "$OS" == "centos" ]] || [[ "$OS" == "rhel" ]]; then
-        yum install -y python3 python3-pip wget curl unzip
-    else
-        print_warning "未知系统，尝试使用通用包管理器"
-    fi
-    
-    # 安装 Flask (优先使用虚拟环境，否则使用系统包)
-    print_info "安装 Flask..."
-    
-    # 方法1: 尝试从系统包管理器安装
-    if [[ "$OS" == "ubuntu" ]] || [[ "$OS" == "debian" ]]; then
+    if [[ "$OS" == "debian" ]] || [[ "$OS" == "ubuntu" ]]; then
+        apt update -qq
+        
+        # 基础工具
+        print_info "安装基础工具..."
+        apt install -y wget curl unzip rsync ca-certificates
+        
+        # Python 和 Flask
+        print_info "安装 Python 和 Flask..."
+        apt install -y python3 python3-pip
+        
+        # 尝试使用系统包安装 Flask (Debian 12+)
         if apt install -y python3-flask 2>/dev/null; then
-            print_success "Flask 已从系统包安装"
-            return 0
+            print_success "Flask 已通过系统包安装"
+        else
+            # 旧版本系统使用 pip
+            print_info "使用 pip 安装 Flask..."
+            if pip3 install flask --break-system-packages 2>/dev/null; then
+                print_success "Flask 已安装"
+            else
+                pip3 install flask
+            fi
         fi
+        
+    elif [[ "$OS" == "centos" ]] || [[ "$OS" == "rhel" ]]; then
+        yum install -y wget curl unzip rsync ca-certificates python3 python3-pip
+        pip3 install flask
+    else
+        print_warning "未知系统，请手动安装: wget curl unzip rsync python3 python3-pip flask"
     fi
     
-    # 方法2: 尝试使用 pip (可能需要 --break-system-packages)
-    if pip3 install flask -q 2>/dev/null; then
-        print_success "Flask 安装完成"
-    else
-        print_info "使用系统包管理器模式安装 Flask..."
-        pip3 install flask --break-system-packages -q 2>/dev/null || {
-            print_error "无法安装 Flask，请手动安装: apt install python3-flask"
-            exit 1
-        }
-        print_success "Flask 安装完成"
-    fi
+    print_success "依赖安装完成"
 }
 
 # 检测或安装 V2bX

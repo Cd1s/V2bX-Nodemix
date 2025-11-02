@@ -81,15 +81,27 @@ show_main_menu() {
     echo "  6) 📁 打开配置目录"
     echo "  7) 🗑️  删除实例"
     echo ""
+    echo -e "${BOLD}${YELLOW}批量操作:${NC}"
+    echo "  8) ▶️  启动所有实例"
+    echo "  9) ⏹️  停止所有实例"
+    echo "  10) 🔄 重启所有实例"
+    echo ""
+    echo -e "${BOLD}${CYAN}自启管理:${NC}"
+    echo "  11) ✅ 开启开机自启"
+    echo "  12) ❌ 关闭开机自启"
+    echo "  13) 📋 查看自启状态"
+    echo ""
     echo -e "${BOLD}${BLUE}系统管理:${NC}"
-    echo "  8) 🔐 修改 Web 密码"
-    echo "  9) 🌐 Web 服务管理"
-    echo "  10) 🔄 升级系统"
-    echo "  11) 🗑️  卸载 V2bX-Nodemix"
+    echo "  14) 🔐 修改 Web 密码"
+    echo "  15) 🌐 Web 服务管理"
+    echo "  16) 🔄 升级 V2bX-Nodemix"
+    echo "  17) 🗑️  卸载 V2bX-Nodemix"
     echo ""
     echo "  0) ❌ 退出"
     echo ""
     echo -e "${CYAN}════════════════════════════════════════════════════════${NC}"
+    read -p "请选择操作 [0-17]: " menu_choice
+    echo "$menu_choice"
 }
 
 # 显示实例状态
@@ -133,12 +145,17 @@ start_instance() {
     fi
     
     if is_running "$name"; then
-        log_info "实例 $name 已在运行"
+        log_info "实例 $name 已在运行 (PID: $(get_pid $name))"
         return 0
     fi
     
     local instance_dir="$INSTANCES_DIR/$name"
     mkdir -p "$instance_dir/logs"
+    
+    if [[ -z "$BINARY_PATH" ]]; then
+        log_error "未找到 V2bX 二进制文件"
+        return 1
+    fi
     
     if [[ ! -f "$instance_dir/V2bX" ]]; then
         cp "$BINARY_PATH" "$instance_dir/V2bX" && chmod +x "$instance_dir/V2bX"
@@ -152,7 +169,8 @@ start_instance() {
     if is_running "$name"; then
         log_success "实例 $name 启动成功 (PID: $(get_pid $name))"
     else
-        log_error "实例 $name 启动失败,查看日志: tail $instance_dir/logs/output.log"
+        log_error "实例 $name 启动失败"
+        log_info "查看日志: tail -f $instance_dir/logs/output.log"
         return 1
     fi
 }
@@ -295,6 +313,34 @@ upgrade_system() {
     clear
     echo -e "${BOLD}${GREEN}=== 升级 V2bX-Nodemix ===${NC}\n"
     
+    # 检查并安装依赖
+    log_info "检查升级所需依赖..."
+    local missing_deps=()
+    
+    command -v wget &>/dev/null || missing_deps+=("wget")
+    command -v unzip &>/dev/null || missing_deps+=("unzip")
+    command -v rsync &>/dev/null || missing_deps+=("rsync")
+    
+    if [[ ${#missing_deps[@]} -gt 0 ]]; then
+        log_warning "缺少依赖: ${missing_deps[*]}"
+        read -p "是否自动安装? (y/n): " install_deps
+        
+        if [[ "$install_deps" == "y" ]]; then
+            log_info "安装依赖..."
+            if command -v apt &>/dev/null; then
+                apt update -qq && apt install -y "${missing_deps[@]}"
+            elif command -v yum &>/dev/null; then
+                yum install -y "${missing_deps[@]}"
+            else
+                log_error "无法自动安装，请手动安装: ${missing_deps[*]}"
+                return 1
+            fi
+        else
+            log_error "缺少必要依赖，无法升级"
+            return 1
+        fi
+    fi
+    
     log_info "从 GitHub 下载最新代码..."
     
     # 备份当前配置
@@ -332,6 +378,12 @@ upgrade_system() {
         # 设置权限
         chmod +x "$BASE_DIR/v2bx-nodemix.sh"
         chmod +x "$BASE_DIR/v2bx-manager.sh"
+        chmod +x "$BASE_DIR/install.sh"
+        chmod +x "$BASE_DIR/update.sh"
+        chmod +x "$BASE_DIR/web/start-web.sh"
+        
+        # 重新创建符号链接
+        ln -sf "$BASE_DIR/v2bx-nodemix.sh" /usr/local/bin/v2bx-nodemix
         
         # 清理临时文件
         rm -rf V2bX-Nodemix-main V2bX-Nodemix.zip
@@ -444,23 +496,149 @@ select_instance() {
         local status="停止"
         local color="${RED}"
         if is_running "$name"; then
-            status="运行"
+            status="运行中"
             color="${GREEN}"
         fi
-        echo -e "  $i) $name ${color}[$status]${NC}"
+        echo -e "  ${CYAN}$i.${NC} $name ${color}[$status]${NC}"
         ((i++))
     done
     
     echo ""
-    read -p "选择实例编号: " choice
+    read -p "选择实例编号 [1-${#instance_array[@]}]: " choice
     
-    if [[ $choice -ge 1 ]] && [[ $choice -le ${#instance_array[@]} ]]; then
+    if [[ "$choice" =~ ^[0-9]+$ ]] && [[ $choice -ge 1 ]] && [[ $choice -le ${#instance_array[@]} ]]; then
         echo "${instance_array[$((choice-1))]}"
         return 0
     else
         log_error "无效选择"
         return 1
     fi
+}
+
+# 启动所有实例
+start_all_instances() {
+    local instances=$(get_instances)
+    
+    if [[ -z "$instances" ]]; then
+        log_error "暂无实例"
+        return 1
+    fi
+    
+    log_info "启动所有实例..."
+    echo ""
+    
+    local success=0
+    local failed=0
+    
+    for name in $instances; do
+        if start_instance "$name"; then
+            ((success++))
+        else
+            ((failed++))
+        fi
+    done
+    
+    echo ""
+    echo -e "${BOLD}启动结果:${NC}"
+    echo "  ✓ 成功: $success"
+    [[ $failed -gt 0 ]] && echo "  ✗ 失败: $failed"
+}
+
+# 停止所有实例
+stop_all_instances() {
+    local instances=$(get_instances)
+    
+    if [[ -z "$instances" ]]; then
+        log_error "暂无实例"
+        return 1
+    fi
+    
+    log_info "停止所有实例..."
+    echo ""
+    
+    for name in $instances; do
+        stop_instance "$name"
+    done
+    
+    log_success "所有实例已停止"
+}
+
+# 重启所有实例
+restart_all_instances() {
+    log_info "重启所有实例..."
+    stop_all_instances
+    sleep 2
+    start_all_instances
+}
+
+# 启用开机自启
+enable_autostart() {
+    clear
+    echo -e "${BOLD}${GREEN}=== 启用开机自启 ===${NC}\n"
+    
+    local service_file="/etc/systemd/system/v2bx-nodemix-instances.service"
+    
+    if [[ ! -f "$service_file" ]]; then
+        log_info "创建自启服务..."
+        
+        cat > "$service_file" <<EOF
+[Unit]
+Description=V2bX-Nodemix Auto-start Instances
+After=network.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=${BASE_DIR}/v2bx-manager.sh start-all
+ExecStop=${BASE_DIR}/v2bx-manager.sh stop-all
+
+[Install]
+WantedBy=multi-user.target
+EOF
+        
+        systemctl daemon-reload
+        log_success "服务文件已创建"
+    fi
+    
+    systemctl enable v2bx-nodemix-instances
+    log_success "已启用开机自启"
+    
+    read -p "是否立即启动所有实例? (y/n): " start_now
+    if [[ "$start_now" == "y" ]]; then
+        systemctl start v2bx-nodemix-instances
+        log_success "所有实例已启动"
+    fi
+}
+
+# 禁用开机自启
+disable_autostart() {
+    clear
+    echo -e "${BOLD}${YELLOW}=== 关闭开机自启 ===${NC}\n"
+    
+    systemctl disable v2bx-nodemix-instances 2>/dev/null
+    log_success "已关闭开机自启"
+    
+    read -p "是否停止所有实例? (y/n): " stop_now
+    if [[ "$stop_now" == "y" ]]; then
+        systemctl stop v2bx-nodemix-instances
+        log_success "所有实例已停止"
+    fi
+}
+
+# 查看自启状态
+check_autostart_status() {
+    clear
+    echo -e "${BOLD}${GREEN}=== 开机自启状态 ===${NC}\n"
+    
+    if systemctl is-enabled --quiet v2bx-nodemix-instances 2>/dev/null; then
+        echo -e "状态: ${GREEN}已启用${NC}"
+    else
+        echo -e "状态: ${RED}未启用${NC}"
+    fi
+    
+    echo ""
+    echo -e "${BOLD}服务详情:${NC}"
+    systemctl status v2bx-nodemix-instances --no-pager 2>/dev/null || echo "服务未安装"
 }
 
 # 主循环
@@ -490,8 +668,7 @@ main() {
     
     # 交互模式主循环
     while true; do
-        show_main_menu
-        read -p "请选择操作 [0-11]: " choice
+        choice=$(show_main_menu)
         
         case $choice in
             1)
@@ -550,18 +727,42 @@ main() {
                 fi
                 ;;
             8)
-                change_web_password
+                start_all_instances
                 read -p "按回车继续..."
                 ;;
             9)
-                manage_web_service
+                stop_all_instances
                 read -p "按回车继续..."
                 ;;
             10)
-                upgrade_system
+                restart_all_instances
                 read -p "按回车继续..."
                 ;;
             11)
+                enable_autostart
+                read -p "按回车继续..."
+                ;;
+            12)
+                disable_autostart
+                read -p "按回车继续..."
+                ;;
+            13)
+                check_autostart_status
+                read -p "按回车继续..."
+                ;;
+            14)
+                change_web_password
+                read -p "按回车继续..."
+                ;;
+            15)
+                manage_web_service
+                read -p "按回车继续..."
+                ;;
+            16)
+                upgrade_system
+                read -p "按回车继续..."
+                ;;
+            17)
                 uninstall_system
                 ;;
             0)
