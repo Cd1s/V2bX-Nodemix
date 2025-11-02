@@ -73,31 +73,31 @@ show_main_menu() {
     echo -e "${BOLD}${CYAN}╚════════════════════════════════════════════════════════╝${NC}"
     echo ""
     echo -e "${BOLD}${GREEN}实例管理:${NC}"
-    echo "  1) 📊 查看所有实例状态"
-    echo "  2) ▶️  启动实例"
-    echo "  3) ⏹️  停止实例"
-    echo "  4) 🔄 重启实例"
-    echo "  5) 📋 查看实例日志"
-    echo "  6) 📁 打开配置目录"
-    echo "  7) 🗑️  删除实例"
+    echo "  1  📊 查看所有实例状态"
+    echo "  2  ▶️  启动实例"
+    echo "  3  ⏹️  停止实例"
+    echo "  4  🔄 重启实例"
+    echo "  5  📋 查看实例日志"
+    echo "  6  📁 打开配置目录"
+    echo "  7  🗑️  删除实例"
     echo ""
     echo -e "${BOLD}${YELLOW}批量操作:${NC}"
-    echo "  8) ▶️  启动所有实例"
-    echo "  9) ⏹️  停止所有实例"
-    echo "  10) 🔄 重启所有实例"
+    echo "  8  ▶️  启动所有实例"
+    echo "  9  ⏹️  停止所有实例"
+    echo "  10 🔄 重启所有实例"
     echo ""
     echo -e "${BOLD}${CYAN}自启管理:${NC}"
-    echo "  11) ✅ 开启开机自启"
-    echo "  12) ❌ 关闭开机自启"
-    echo "  13) 📋 查看自启状态"
+    echo "  11 ✅ 开启开机自启"
+    echo "  12 ❌ 关闭开机自启"
+    echo "  13 📋 查看自启状态"
     echo ""
     echo -e "${BOLD}${BLUE}系统管理:${NC}"
-    echo "  14) 🔐 修改 Web 密码"
-    echo "  15) 🌐 Web 服务管理"
-    echo "  16) 🔄 升级 V2bX-Nodemix"
-    echo "  17) 🗑️  卸载 V2bX-Nodemix"
+    echo "  14 🔐 修改 Web 密码"
+    echo "  15 🌐 Web 服务管理"
+    echo "  16 🔄 升级 V2bX-Nodemix"
+    echo "  17 🗑️  卸载 V2bX-Nodemix"
     echo ""
-    echo "  0) ❌ 退出"
+    echo "  0  ❌ 退出"
     echo ""
     echo -e "${CYAN}════════════════════════════════════════════════════════${NC}"
 }
@@ -485,19 +485,17 @@ select_instance() {
         return 1
     fi
     
-    echo -e "\n${BOLD}可用实例:${NC}"
+    echo -e "\n${BOLD}${GREEN}可用实例:${NC}"
     local i=1
     local instance_array=()
     
     for name in $instances; do
         instance_array+=("$name")
-        local status="停止"
-        local color="${RED}"
+        local status="${RED}停止${NC}"
         if is_running "$name"; then
-            status="运行中"
-            color="${GREEN}"
+            status="${GREEN}运行中${NC}"
         fi
-        echo -e "  ${CYAN}$i.${NC} $name ${color}[$status]${NC}"
+        printf "  ${CYAN}%-3s${NC} %-20s %b\n" "$i." "$name" "$status"
         ((i++))
     done
     
@@ -505,7 +503,8 @@ select_instance() {
     read -p "选择实例编号 [1-${#instance_array[@]}]: " choice
     
     if [[ "$choice" =~ ^[0-9]+$ ]] && [[ $choice -ge 1 ]] && [[ $choice -le ${#instance_array[@]} ]]; then
-        echo "${instance_array[$((choice-1))]}"
+        selected_instance="${instance_array[$((choice-1))]}"
+        echo "$selected_instance"
         return 0
     else
         log_error "无效选择"
