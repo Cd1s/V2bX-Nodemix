@@ -100,8 +100,6 @@ show_main_menu() {
     echo "  0) ❌ 退出"
     echo ""
     echo -e "${CYAN}════════════════════════════════════════════════════════${NC}"
-    read -p "请选择操作 [0-17]: " menu_choice
-    echo "$menu_choice"
 }
 
 # 显示实例状态
@@ -668,7 +666,8 @@ main() {
     
     # 交互模式主循环
     while true; do
-        choice=$(show_main_menu)
+        show_main_menu
+        read -p "请选择操作 [0-17]: " choice
         
         case $choice in
             1)
