@@ -354,6 +354,12 @@ uninstall_system() {
     systemctl stop v2bx-nodemix-web 2>/dev/null
     systemctl disable v2bx-nodemix-web 2>/dev/null
     rm -f /etc/systemd/system/v2bx-nodemix-web.service
+    
+    log_info "停止实例自启服务..."
+    systemctl stop v2bx-nodemix-instances 2>/dev/null
+    systemctl disable v2bx-nodemix-instances 2>/dev/null
+    rm -f /etc/systemd/system/v2bx-nodemix-instances.service
+    
     systemctl daemon-reload
     
     log_info "删除命令行工具..."

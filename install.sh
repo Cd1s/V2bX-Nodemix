@@ -87,32 +87,78 @@ install_dependencies() {
     fi
 }
 
-# 检测 V2bX 安装
+# 检测或安装 V2bX
 detect_v2bx() {
-    print_info "检测 V2bX 安装..."
+    print_info "检测 V2bX..."
     
-    # 常见 V2bX 安装位置
+    # 检测 V2bX 二进制文件
+    V2BX_BIN=""
+    
+    # 优先检查常见路径
+    if command -v V2bX &> /dev/null; then
+        V2BX_BIN=$(which V2bX)
+        V2BX_DIR="$(dirname "$V2BX_BIN")"
+        print_success "找到 V2bX: $V2BX_BIN"
+        return 0
+    fi
+    
+    # 手动检查常见位置的可执行文件
     V2BX_PATHS=(
+        "/usr/local/bin/V2bX"
         "/usr/local/V2bX/V2bX"
         "/opt/V2bX/V2bX"
-        "/root/V2bX/V2bX"
-        "/etc/V2bX/V2bX"
-        "$(which V2bX 2>/dev/null)"
+        "/usr/bin/V2bX"
     )
     
-    V2BX_BIN=""
     for path in "${V2BX_PATHS[@]}"; do
-        if [ -f "$path" ]; then
+        if [[ -f "$path" ]] && [[ -x "$path" ]]; then
             V2BX_BIN="$path"
             V2BX_DIR="$(dirname "$path")"
             print_success "找到 V2bX: $V2BX_BIN"
-            break
+            return 0
         fi
     done
     
-    if [ -z "$V2BX_BIN" ]; then
-        print_warning "未检测到 V2bX，将下载最新版本"
-        download_v2bx
+    # 未找到可执行的 V2bX 二进制文件
+    print_warning "未检测到 V2bX 可执行文件"
+    echo ""
+    read -p "是否使用官方脚本安装 V2bX? (y/n): " install_v2bx
+    
+    if [[ "$install_v2bx" == "y" ]]; then
+        print_info "下载并运行官方 V2bX 安装脚本..."
+        wget -N https://raw.githubusercontent.com/wyx2685/V2bX-script/master/install.sh -O /tmp/v2bx-install.sh
+        bash /tmp/v2bx-install.sh
+        rm -f /tmp/v2bx-install.sh
+        
+        echo ""
+        print_info "重新检测 V2bX..."
+        
+        # 重新检测
+        if command -v V2bX &> /dev/null; then
+            V2BX_BIN=$(which V2bX)
+            V2BX_DIR="$(dirname "$V2BX_BIN")"
+            print_success "V2bX 安装成功: $V2BX_BIN"
+            return 0
+        fi
+        
+        for path in "${V2BX_PATHS[@]}"; do
+            if [[ -f "$path" ]] && [[ -x "$path" ]]; then
+                V2BX_BIN="$path"
+                V2BX_DIR="$(dirname "$path")"
+                print_success "V2bX 安装成功: $V2BX_BIN"
+                return 0
+            fi
+        done
+        
+        print_error "V2bX 安装失败或未找到可执行文件"
+        exit 1
+    else
+        print_error "需要先安装 V2bX"
+        echo ""
+        echo "请手动运行官方安装脚本:"
+        echo "  wget -N https://raw.githubusercontent.com/wyx2685/V2bX-script/master/install.sh && bash install.sh"
+        echo ""
+        exit 1
     fi
 }
 
@@ -257,11 +303,12 @@ create_example_config() {
 
 # 创建系统服务
 create_systemd_service() {
-    print_info "创建 Web 管理界面系统服务..."
+    print_info "创建系统服务..."
     
     # 检测 Python 路径
     PYTHON_BIN=$(which python3)
     
+    # Web 管理服务
     cat > /etc/systemd/system/v2bx-nodemix-web.service <<EOF
 [Unit]
 Description=V2bX-Nodemix Web Management
@@ -280,10 +327,27 @@ Environment="PYTHONUNBUFFERED=1"
 WantedBy=multi-user.target
 EOF
     
+    # 实例自启服务
+    cat > /etc/systemd/system/v2bx-nodemix-instances.service <<EOF
+[Unit]
+Description=V2bX-Nodemix Instances Auto-start
+After=network.target v2bx-nodemix-web.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=$INSTALL_DIR/v2bx-manager.sh start-all
+ExecStop=$INSTALL_DIR/v2bx-manager.sh stop-all
+
+[Install]
+WantedBy=multi-user.target
+EOF
+    
     systemctl daemon-reload
     systemctl enable v2bx-nodemix-web.service
+    systemctl enable v2bx-nodemix-instances.service
     
-    print_success "系统服务已创建"
+    print_success "系统服务已创建并设置开机自启"
 }
 
 # 创建命令行快捷方式
@@ -331,9 +395,11 @@ show_summary() {
     echo ""
     echo "  3. 启动实例: v2bx-nodemix start example"
     echo ""
-    echo "  4. 启动 Web 管理界面: systemctl start v2bx-nodemix-web"
-    echo ""
     print_warning "重要: 必须先编辑配置文件,替换 ApiHost/ApiKey 和 WireGuard 密钥!"
+    echo ""
+    print_info "✅ 已设置开机自启:"
+    echo "  - Web 管理界面: v2bx-nodemix-web.service"
+    echo "  - 所有实例: v2bx-nodemix-instances.service"
     echo ""
     print_info "详细文档: $INSTALL_DIR/README.md"
     print_info "WireGuard 配置: $INSTALL_DIR/WIREGUARD.md"
@@ -359,14 +425,14 @@ main() {
     create_command_alias
     
     # 默认启动 Web 管理界面
-    print_info "启动 Web 管理界面..."
+    print_info "启动服务..."
     systemctl start v2bx-nodemix-web
-    systemctl enable v2bx-nodemix-web
     
     show_summary
     
     echo ""
     print_success "安装完成！Web 管理界面已启动"
+    print_info "实例将在系统重启后自动启动（需先配置实例）"
 }
 
 # 运行主函数
