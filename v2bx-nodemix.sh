@@ -317,7 +317,6 @@ upgrade_system() {
     
     command -v wget &>/dev/null || missing_deps+=("wget")
     command -v unzip &>/dev/null || missing_deps+=("unzip")
-    command -v rsync &>/dev/null || missing_deps+=("rsync")
     
     if [[ ${#missing_deps[@]} -gt 0 ]]; then
         log_warning "缺少依赖: ${missing_deps[*]}"
@@ -341,18 +340,27 @@ upgrade_system() {
     
     log_info "从 GitHub 下载最新代码..."
     
-    # 备份当前配置
+    # 备份当前配置和密码
+    local backup_dir="/tmp/v2bx-backup-$(date +%Y%m%d_%H%M%S)"
+    mkdir -p "$backup_dir"
+    
     if [[ -d "$BASE_DIR/configs" ]]; then
-        log_info "备份当前配置..."
-        BACKUP_DIR="$BASE_DIR/configs.backup.$(date +%Y%m%d_%H%M%S)"
-        cp -r "$BASE_DIR/configs" "$BACKUP_DIR"
-        log_success "配置已备份到: $BACKUP_DIR"
+        log_info "备份配置文件..."
+        cp -r "$BASE_DIR/configs" "$backup_dir/"
     fi
     
-    # 备份密码文件
     if [[ -f "$PASSWORD_FILE" ]]; then
-        cp "$PASSWORD_FILE" "/tmp/.v2bx-password.bak"
+        cp "$PASSWORD_FILE" "$backup_dir/.password"
     fi
+    
+    if [[ -d "$BASE_DIR/instances" ]]; then
+        log_info "备份实例运行数据..."
+        # 只备份 PID 文件，不备份日志
+        mkdir -p "$backup_dir/instances"
+        find "$BASE_DIR/instances" -name "pid" -exec cp --parents {} "$backup_dir/" \;
+    fi
+    
+    log_success "备份完成: $backup_dir"
     
     # 下载最新版本
     cd /tmp
@@ -362,26 +370,67 @@ upgrade_system() {
     if wget -q --show-progress "https://github.com/Cd1s/V2bX-Nodemix/archive/refs/heads/main.zip" -O V2bX-Nodemix.zip; then
         log_success "下载完成"
         
-        log_info "解压并更新文件..."
+        log_info "解压文件..."
         unzip -q -o V2bX-Nodemix.zip
         
-        # 保留配置目录和密码文件，更新其他文件
-        rsync -av --exclude='configs' --exclude='.password' V2bX-Nodemix-main/ "$BASE_DIR/"
+        # 停止所有服务
+        log_info "停止服务..."
+        systemctl stop v2bx-nodemix-web 2>/dev/null || true
         
-        # 恢复密码文件
-        if [[ -f "/tmp/.v2bx-password.bak" ]]; then
-            mv "/tmp/.v2bx-password.bak" "$PASSWORD_FILE"
+        # 更新文件 - 只更新脚本和 Web 文件
+        log_info "更新文件..."
+        
+        # 更新主脚本
+        cp -f V2bX-Nodemix-main/v2bx-nodemix.sh "$BASE_DIR/"
+        cp -f V2bX-Nodemix-main/v2bx-manager.sh "$BASE_DIR/"
+        cp -f V2bX-Nodemix-main/install.sh "$BASE_DIR/"
+        cp -f V2bX-Nodemix-main/update.sh "$BASE_DIR/" 2>/dev/null || true
+        
+        # 更新 Web 文件
+        cp -rf V2bX-Nodemix-main/web/* "$BASE_DIR/web/"
+        
+        # 更新配置模板（不影响现有配置）
+        if [[ -d "V2bX-Nodemix-main/configs/template" ]]; then
+            mkdir -p "$BASE_DIR/configs/template"
+            cp -f V2bX-Nodemix-main/configs/template/* "$BASE_DIR/configs/template/"
+        fi
+        
+        # 更新文档
+        cp -f V2bX-Nodemix-main/*.md "$BASE_DIR/" 2>/dev/null || true
+        
+        # 恢复配置和密码
+        log_info "恢复配置..."
+        if [[ -d "$backup_dir/configs" ]]; then
+            cp -r "$backup_dir/configs"/* "$BASE_DIR/configs/" 2>/dev/null || true
+        fi
+        
+        if [[ -f "$backup_dir/.password" ]]; then
+            cp "$backup_dir/.password" "$PASSWORD_FILE"
         fi
         
         # 设置权限
+        log_info "设置权限..."
         chmod +x "$BASE_DIR/v2bx-nodemix.sh"
         chmod +x "$BASE_DIR/v2bx-manager.sh"
         chmod +x "$BASE_DIR/install.sh"
-        chmod +x "$BASE_DIR/update.sh"
+        chmod +x "$BASE_DIR/update.sh" 2>/dev/null || true
         chmod +x "$BASE_DIR/web/start-web.sh"
         
         # 重新创建符号链接
         ln -sf "$BASE_DIR/v2bx-nodemix.sh" /usr/local/bin/v2bx-nodemix
+        
+        # 检查并更新 Python 依赖
+        log_info "检查 Python 依赖..."
+        if command -v python3 &>/dev/null; then
+            python3 -c "import flask" 2>/dev/null || {
+                log_warning "Flask 未安装，正在安装..."
+                if command -v apt &>/dev/null; then
+                    apt install -y python3-flask 2>/dev/null || pip3 install flask
+                else
+                    pip3 install flask 2>/dev/null || true
+                fi
+            }
+        fi
         
         # 清理临时文件
         rm -rf V2bX-Nodemix-main V2bX-Nodemix.zip
@@ -389,7 +438,7 @@ upgrade_system() {
         log_success "文件已更新"
         
         # 重启 Web 服务
-        if systemctl is-active --quiet v2bx-nodemix-web; then
+        if systemctl is-enabled --quiet v2bx-nodemix-web 2>/dev/null; then
             log_info "重启 Web 服务..."
             systemctl restart v2bx-nodemix-web
             log_success "Web 服务已重启"
@@ -398,15 +447,34 @@ upgrade_system() {
         echo ""
         log_success "升级完成！"
         echo ""
-        echo "已保留:"
-        echo "  ✓ 所有配置文件 (configs/)"
+        echo -e "${GREEN}已保留:${NC}"
+        echo "  ✓ 所有实例配置 (configs/)"
         echo "  ✓ Web 管理密码"
+        echo "  ✓ 实例运行数据"
         echo ""
-        echo "已更新:"
-        echo "  ✓ 管理脚本"
-        echo "  ✓ Web 界面"
-        echo "  ✓ 文档"
+        echo -e "${GREEN}已更新:${NC}"
+        echo "  ✓ 管理脚本 (v2bx-nodemix.sh)"
+        echo "  ✓ 实例管理器 (v2bx-manager.sh)"
+        echo "  ✓ Web 界面 (web/)"
+        echo "  ✓ 配置模板"
+        echo "  ✓ 文档文件"
         echo ""
+        echo -e "${CYAN}备份位置:${NC} $backup_dir"
+        echo "如确认无问题可删除: rm -rf $backup_dir"
+        echo ""
+        log_warning "建议重启正在运行的实例以应用更新"
+        
+    else
+        log_error "下载失败,请检查网络连接"
+        log_info "手动升级方法:"
+        echo "  1. cd /tmp"
+        echo "  2. wget https://github.com/Cd1s/V2bX-Nodemix/archive/refs/heads/main.zip"
+        echo "  3. unzip main.zip"
+        echo "  4. cp -f V2bX-Nodemix-main/v2bx-*.sh $BASE_DIR/"
+        echo "  5. cp -rf V2bX-Nodemix-main/web/* $BASE_DIR/web/"
+        return 1
+    fi
+}
         
         if [[ -d "$BACKUP_DIR" ]]; then
             echo "配置备份: $BACKUP_DIR"
