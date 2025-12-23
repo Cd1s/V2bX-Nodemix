@@ -95,28 +95,22 @@ detect_v2bx() {
     # 检测 V2bX 二进制文件
     V2BX_BIN=""
     
-    # 优先检查常见路径
-    if command -v V2bX &> /dev/null; then
-        V2BX_BIN=$(which V2bX)
-        V2BX_DIR="$(dirname "$V2BX_BIN")"
-        print_success "找到 V2bX: $V2BX_BIN"
-        return 0
-    fi
-    
-    # 手动检查常见位置的可执行文件
+    # 手动检查常见位置的可执行文件(优先检查真正的二进制文件)
     V2BX_PATHS=(
-        "/usr/local/bin/V2bX"
         "/usr/local/V2bX/V2bX"
         "/opt/V2bX/V2bX"
-        "/usr/bin/V2bX"
+        "/usr/local/bin/V2bX"
     )
     
     for path in "${V2BX_PATHS[@]}"; do
         if [[ -f "$path" ]] && [[ -x "$path" ]]; then
-            V2BX_BIN="$path"
-            V2BX_DIR="$(dirname "$path")"
-            print_success "找到 V2bX: $V2BX_BIN"
-            return 0
+            # 确保是 ELF 二进制文件，不是脚本
+            if file "$path" | grep -q "ELF"; then
+                V2BX_BIN="$path"
+                V2BX_DIR="$(dirname "$path")"
+                print_success "找到 V2bX: $V2BX_BIN"
+                return 0
+            fi
         fi
     done
     

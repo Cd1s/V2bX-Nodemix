@@ -18,17 +18,18 @@ INSTANCES_DIR="${BASE_DIR}/instances"
 # 自动检测 V2bX 二进制文件位置
 detect_v2bx_binary() {
     local paths=(
-        "${BASE_DIR}/bin/V2bX"
         "/usr/local/V2bX/V2bX"
         "/opt/V2bX/V2bX"
-        "/usr/bin/V2bX"
-        "$(which V2bX 2>/dev/null)"
+        "${BASE_DIR}/bin/V2bX"
     )
     
     for path in "${paths[@]}"; do
         if [[ -f "$path" ]] && [[ -x "$path" ]]; then
-            echo "$path"
-            return 0
+            # 检查是否为 ELF 二进制文件，而不是脚本
+            if file "$path" | grep -q "ELF"; then
+                echo "$path"
+                return 0
+            fi
         fi
     done
     

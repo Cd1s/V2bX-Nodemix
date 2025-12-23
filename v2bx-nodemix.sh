@@ -21,17 +21,18 @@ PASSWORD_FILE="${BASE_DIR}/.password"
 # 检测 V2bX 二进制
 detect_v2bx_binary() {
     local paths=(
-        "${BASE_DIR}/bin/V2bX"
         "/usr/local/V2bX/V2bX"
         "/opt/V2bX/V2bX"
-        "/usr/bin/V2bX"
-        "$(which V2bX 2>/dev/null)"
+        "${BASE_DIR}/bin/V2bX"
     )
     
     for path in "${paths[@]}"; do
         if [[ -f "$path" ]] && [[ -x "$path" ]]; then
-            echo "$path"
-            return 0
+            # 确保是 ELF 二进制文件，不是脚本
+            if file "$path" | grep -q "ELF"; then
+                echo "$path"
+                return 0
+            fi
         fi
     done
     return 1
