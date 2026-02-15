@@ -30,10 +30,18 @@ detect_v2bx_binary() {
     
     for path in "${paths[@]}"; do
         if [[ -f "$path" ]] && [[ -x "$path" ]]; then
-            # 检查是否为 ELF 二进制文件，而不是脚本
-            if /usr/bin/file "$path" 2>/dev/null | grep -q "ELF"; then
-                echo "$path"
-                return 0
+            # 多种方式检测二进制文件
+            if command -v file &> /dev/null; then
+                if file "$path" 2>/dev/null | grep -qE "ELF|executable"; then
+                    echo "$path"
+                    return 0
+                fi
+            else
+                # 备用方法：检查文件头或大小
+                if head -c 4 "$path" 2>/dev/null | grep -q "ELF" || [[ $(stat -c%s "$path" 2>/dev/null || stat -f%z "$path" 2>/dev/null) -gt 1048576 ]]; then
+                    echo "$path"
+                    return 0
+                fi
             fi
         fi
     done
