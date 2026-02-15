@@ -34,18 +34,17 @@ detect_v2bx_binary() {
     
     for path in "${paths[@]}"; do
         if [[ -f "$path" ]] && [[ -x "$path" ]]; then
-            # 多种方式检测二进制文件
-            if command -v file &> /dev/null; then
-                if file "$path" 2>/dev/null | grep -qE "ELF|executable"; then
-                    echo "$path"
-                    return 0
-                fi
-            else
-                # 备用方法：检查文件头或大小
-                if head -c 4 "$path" 2>/dev/null | grep -q "ELF" || [[ $(stat -c%s "$path" 2>/dev/null || stat -f%z "$path" 2>/dev/null) -gt 1048576 ]]; then
-                    echo "$path"
-                    return 0
-                fi
+            # 检查 ELF 魔数（7f 45 4c 46）
+            local magic=$(head -c 4 "$path" 2>/dev/null | od -An -tx1 | tr -d ' ')
+            if [[ "$magic" == "7f454c46" ]]; then
+                echo "$path"
+                return 0
+            fi
+            # 文件大小判断（V2bX 通常 > 10MB）
+            local size=$(stat -c%s "$path" 2>/dev/null || stat -f%z "$path" 2>/dev/null || echo 0)
+            if [[ $size -gt 10485760 ]]; then
+                echo "$path"
+                return 0
             fi
         fi
     done

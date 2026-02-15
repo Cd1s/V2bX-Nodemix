@@ -104,30 +104,22 @@ detect_v2bx() {
     
     for path in "${V2BX_PATHS[@]}"; do
         if [[ -f "$path" ]] && [[ -x "$path" ]]; then
-            # 检测是否为 ELF 二进制文件
-            # 方法1: 使用 file 命令
-            if command -v file &> /dev/null; then
-                if file "$path" 2>/dev/null | grep -qE "ELF|executable"; then
-                    V2BX_BIN="$path"
-                    V2BX_DIR="$(dirname "$path")"
-                    print_success "找到 V2bX: $V2BX_BIN"
-                    return 0
-                fi
-            else
-                # 方法2: 检查文件头（ELF魔数）
-                if head -c 4 "$path" 2>/dev/null | grep -q "ELF"; then
-                    V2BX_BIN="$path"
-                    V2BX_DIR="$(dirname "$path")"
-                    print_success "找到 V2bX: $V2BX_BIN"
-                    return 0
-                fi
-                # 方法3: 如果文件大于1MB且可执行，很可能是二进制文件
-                if [[ $(stat -c%s "$path" 2>/dev/null || stat -f%z "$path" 2>/dev/null) -gt 1048576 ]]; then
-                    V2BX_BIN="$path"
-                    V2BX_DIR="$(dirname "$path")"
-                    print_success "找到 V2bX: $V2BX_BIN (通过文件大小判断)"
-                    return 0
-                fi
+            # 方法1: 检查 ELF 魔数（最可靠，不依赖外部命令）
+            local magic=$(head -c 4 "$path" 2>/dev/null | od -An -tx1 | tr -d ' ')
+            if [[ "$magic" == "7f454c46" ]]; then
+                V2BX_BIN="$path"
+                V2BX_DIR="$(dirname "$path")"
+                print_success "找到 V2bX: $V2BX_BIN"
+                return 0
+            fi
+            
+            # 方法2: 文件大小判断（V2bX 通常 > 50MB）
+            local size=$(stat -c%s "$path" 2>/dev/null || stat -f%z "$path" 2>/dev/null || echo 0)
+            if [[ $size -gt 10485760 ]]; then  # 大于 10MB
+                V2BX_BIN="$path"
+                V2BX_DIR="$(dirname "$path")"
+                print_success "找到 V2bX: $V2BX_BIN"
+                return 0
             fi
         fi
     done
@@ -149,21 +141,21 @@ detect_v2bx() {
         # 重新检测（使用相同的检测逻辑）
         for path in "${V2BX_PATHS[@]}"; do
             if [[ -f "$path" ]] && [[ -x "$path" ]]; then
-                # 使用多种方式检测
-                if command -v file &> /dev/null; then
-                    if file "$path" 2>/dev/null | grep -qE "ELF|executable"; then
-                        V2BX_BIN="$path"
-                        V2BX_DIR="$(dirname "$path")"
-                        print_success "V2bX 安装成功: $V2BX_BIN"
-                        return 0
-                    fi
-                else
-                    if head -c 4 "$path" 2>/dev/null | grep -q "ELF" || [[ $(stat -c%s "$path" 2>/dev/null || stat -f%z "$path" 2>/dev/null) -gt 1048576 ]]; then
-                        V2BX_BIN="$path"
-                        V2BX_DIR="$(dirname "$path")"
-                        print_success "V2bX 安装成功: $V2BX_BIN"
-                        return 0
-                    fi
+                # 检查 ELF 魔数
+                local magic=$(head -c 4 "$path" 2>/dev/null | od -An -tx1 | tr -d ' ')
+                if [[ "$magic" == "7f454c46" ]]; then
+                    V2BX_BIN="$path"
+                    V2BX_DIR="$(dirname "$path")"
+                    print_success "V2bX 安装成功: $V2BX_BIN"
+                    return 0
+                fi
+                # 文件大小判断
+                local size=$(stat -c%s "$path" 2>/dev/null || stat -f%z "$path" 2>/dev/null || echo 0)
+                if [[ $size -gt 10485760 ]]; then
+                    V2BX_BIN="$path"
+                    V2BX_DIR="$(dirname "$path")"
+                    print_success "V2bX 安装成功: $V2BX_BIN"
+                    return 0
                 fi
             fi
         done
