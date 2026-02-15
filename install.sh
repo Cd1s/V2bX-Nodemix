@@ -105,7 +105,7 @@ detect_v2bx() {
     for path in "${V2BX_PATHS[@]}"; do
         if [[ -f "$path" ]] && [[ -x "$path" ]]; then
             # 确保是 ELF 二进制文件，不是脚本
-            if file "$path" | grep -q "ELF"; then
+            if /usr/bin/file "$path" 2>/dev/null | grep -q "ELF"; then
                 V2BX_BIN="$path"
                 V2BX_DIR="$(dirname "$path")"
                 print_success "找到 V2bX: $V2BX_BIN"
@@ -128,20 +128,15 @@ detect_v2bx() {
         echo ""
         print_info "重新检测 V2bX..."
         
-        # 重新检测
-        if command -v V2bX &> /dev/null; then
-            V2BX_BIN=$(which V2bX)
-            V2BX_DIR="$(dirname "$V2BX_BIN")"
-            print_success "V2bX 安装成功: $V2BX_BIN"
-            return 0
-        fi
-        
+        # 重新检测（必须检查是否为 ELF 二进制）
         for path in "${V2BX_PATHS[@]}"; do
             if [[ -f "$path" ]] && [[ -x "$path" ]]; then
-                V2BX_BIN="$path"
-                V2BX_DIR="$(dirname "$path")"
-                print_success "V2bX 安装成功: $V2BX_BIN"
-                return 0
+                if /usr/bin/file "$path" 2>/dev/null | grep -q "ELF"; then
+                    V2BX_BIN="$path"
+                    V2BX_DIR="$(dirname "$path")"
+                    print_success "V2bX 安装成功: $V2BX_BIN"
+                    return 0
+                fi
             fi
         done
         

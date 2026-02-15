@@ -15,6 +15,11 @@ BASE_DIR="/opt/V2bX-Nodemix"
 CONFIGS_DIR="${BASE_DIR}/configs"
 INSTANCES_DIR="${BASE_DIR}/instances"
 
+# 日志函数（必须在其他函数之前定义）
+log_info() { echo -e "${GREEN}[INFO]${NC} $1"; }
+log_error() { echo -e "${RED}[ERROR]${NC} $1"; }
+log_success() { echo -e "${GREEN}[✓]${NC} $1"; }
+
 # 自动检测 V2bX 二进制文件位置
 detect_v2bx_binary() {
     local paths=(
@@ -26,7 +31,7 @@ detect_v2bx_binary() {
     for path in "${paths[@]}"; do
         if [[ -f "$path" ]] && [[ -x "$path" ]]; then
             # 检查是否为 ELF 二进制文件，而不是脚本
-            if file "$path" | grep -q "ELF"; then
+            if /usr/bin/file "$path" 2>/dev/null | grep -q "ELF"; then
                 echo "$path"
                 return 0
             fi
@@ -39,12 +44,9 @@ detect_v2bx_binary() {
 BINARY_PATH=$(detect_v2bx_binary)
 if [[ -z "$BINARY_PATH" ]]; then
     log_error "未找到 V2bX 二进制文件，请先安装 V2bX"
+    log_error "请运行: wget -N https://raw.githubusercontent.com/wyx2685/V2bX-script/master/install.sh && bash install.sh"
     exit 1
 fi
-
-log_info() { echo -e "${GREEN}[INFO]${NC} $1"; }
-log_error() { echo -e "${RED}[ERROR]${NC} $1"; }
-log_success() { echo -e "${GREEN}[✓]${NC} $1"; }
 
 get_instances() {
     [[ ! -d "$CONFIGS_DIR" ]] && return

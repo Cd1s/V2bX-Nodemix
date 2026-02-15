@@ -18,6 +18,12 @@ CONFIGS_DIR="${BASE_DIR}/configs"
 INSTANCES_DIR="${BASE_DIR}/instances"
 PASSWORD_FILE="${BASE_DIR}/.password"
 
+# 日志函数（必须在其他函数之前定义）
+log_info() { echo -e "${GREEN}[INFO]${NC} $1"; }
+log_error() { echo -e "${RED}[ERROR]${NC} $1"; }
+log_success() { echo -e "${GREEN}[✓]${NC} $1"; }
+log_warning() { echo -e "${YELLOW}[!]${NC} $1"; }
+
 # 检测 V2bX 二进制
 detect_v2bx_binary() {
     local paths=(
@@ -29,7 +35,7 @@ detect_v2bx_binary() {
     for path in "${paths[@]}"; do
         if [[ -f "$path" ]] && [[ -x "$path" ]]; then
             # 确保是 ELF 二进制文件，不是脚本
-            if file "$path" | grep -q "ELF"; then
+            if /usr/bin/file "$path" 2>/dev/null | grep -q "ELF"; then
                 echo "$path"
                 return 0
             fi
@@ -39,11 +45,6 @@ detect_v2bx_binary() {
 }
 
 BINARY_PATH=$(detect_v2bx_binary)
-
-log_info() { echo -e "${GREEN}[INFO]${NC} $1"; }
-log_error() { echo -e "${RED}[ERROR]${NC} $1"; }
-log_success() { echo -e "${GREEN}[✓]${NC} $1"; }
-log_warning() { echo -e "${YELLOW}[!]${NC} $1"; }
 
 # 获取所有实例
 get_instances() {
